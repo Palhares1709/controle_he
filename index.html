@@ -115,26 +115,17 @@
   // --- NO SEU index.html NO GITHUB ---
 
 function chamarGoogle(funcao, dados, callback) {
-  const urlFinal = WEB_APP_URL + "?action=" + funcao;
-  
-  // Criamos um formulário em memória para enviar os dados
-  const form = new FormData();
-  form.append('dados', JSON.stringify(dados));
-
-  fetch(urlFinal, {
+  fetch(WEB_APP_URL + "?action=" + funcao, {
     method: 'POST',
-    body: form, // Enviando como formulário
-    mode: 'cors', 
-    redirect: 'follow'
+    body: JSON.stringify(dados)
   })
-  .then(response => response.json())
+  .then(res => res.json())
   .then(res => callback(res))
-  .catch(error => {
+  .catch(err => {
     Swal.close();
-    console.error('Erro de conexão:', error);
-    // Se ainda der erro de CORS, usaremos o plano B (no-cors) abaixo
+    console.error(err);
   });
-}  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
+}}  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
 function login() {
   var u = document.getElementById('u').value;
   var p = document.getElementById('p').value;
@@ -149,16 +140,12 @@ function login() {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
-      
-      // Mostra tudo para todos
-      document.getElementById('tabR').style.display = 'block';
-      
       init();
     } else {
       Swal.fire({ icon: 'warning', title: 'Sistema CMR', html: r.msg });
     }
   });
-}}  function init() {
+}}}  function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     chamarGoogle('getDadosEquipes', {}, e => {
       equipes = e;
