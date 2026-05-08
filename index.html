@@ -112,18 +112,46 @@
   }
 
   // VERSÃO COMPATÍVEL COM FETCH PARA RETORNO DE DADOS
-  function chamarGoogle(funcao, dados, callback) {
-  fetch(WEB_APP_URL + "?action=" + funcao, {
+  // --- NO SEU index.html NO GITHUB ---
+
+function chamarGoogle(funcao, dados, callback) {
+  // Adicionamos os dados na URL para evitar bloqueios de segurança (CORS)
+  const urlFinal = WEB_APP_URL + "?action=" + funcao;
+  
+  fetch(urlFinal, {
     method: 'POST',
+    mode: 'no-cors', // Isso evita o erro de redirecionamento do Google
     body: JSON.stringify(dados)
   })
-  .then(res => res.json()) // O erro pode estar aqui se o Google não retornar um JSON válido
-  .then(res => callback(res))
-  .catch(err => {
-    Swal.close();
-    console.error("Erro na chamada:", err);
-    Swal.fire('Erro de Conexão', 'Não foi possível falar com o servidor.', 'error');
+  .then(() => {
+    // Como o 'no-cors' não permite ler a resposta diretamente por segurança,
+    // vamos usar um pequeno truque: chamar via GET para buscas e POST para salvar.
+    // Mas para o seu sistema agora, tente esta versão simplificada:
+    
+    // Se for apenas para SALVAR, o no-cors funciona. 
+    // Para LOGIN (que precisa de resposta), precisamos mudar a estratégia abaixo:
+    executarComResposta(funcao, dados, callback);
   });
+}
+
+// ESTA FUNÇÃO VAI RESOLVER O LOGIN:
+function executarComResposta(funcao, dados, callback) {
+  const queryParams = new URLSearchParams({
+    action: funcao,
+    dados: JSON.stringify(dados)
+  }).toString();
+
+  const script = document.createElement('script');
+  const nomeCallback = 'callback_' + Math.round(Math.random() * 1000000);
+  
+  window[nomeCallback] = function(response) {
+    delete window[nomeCallback];
+    document.body.removeChild(script);
+    callback(response);
+  };
+
+  script.src = WEB_APP_URL + "?" + queryParams + "&prefix=" + nomeCallback;
+  document.body.appendChild(script);
 }
 
   // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
