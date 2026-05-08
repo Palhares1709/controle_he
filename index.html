@@ -139,37 +139,25 @@ function login() {
   const u = document.getElementById('u').value;
   const p = document.getElementById('p').value;
   
-  if(!u || !p) return Swal.fire({ icon: 'info', title: 'Ei!', text: 'Preencha usuário e senha.' });
-
-  Swal.fire({ title: 'Aguarde...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-
-  // Usando a rota de ação explicitamente
-  chamarGoogle('verificarLogin', {u: u, p: p}, function(r) {
-    Swal.close();
-    console.log("Resposta recebida:", r); // Isso vai aparecer no seu Console se funcionar
-
-    if(r && r.sucesso) {
+  const callbackName = 'log_cb';
+  window[callbackName] = function(r) {
+    if(r.sucesso) {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
-
-      // Trava de visualização para não-ADM
-      if(r.nivel !== 'ADM') {
-        document.getElementById('tabR').style.display = 'none';
-        if(document.getElementById('btnPdf')) document.getElementById('btnPdf').style.display = 'none';
-      }
-      
+      if(r.nivel !== 'ADM') document.getElementById('tabR').style.display = 'none';
       init();
     } else {
-      Swal.fire({ 
-        icon: (r && r.msg && r.msg.includes('BLOQUEADO')) ? 'error' : 'warning', 
-        title: 'Sistema CMR', 
-        html: r ? r.msg : "Erro desconhecido no servidor." 
-      });
+      Swal.fire('Erro', r.msg, 'error');
     }
-  });
-}
-  function init() {
+    document.body.removeChild(script);
+  };
+
+  const script = document.createElement('script');
+  const dados = JSON.stringify({u: u, p: p});
+  script.src = WEB_APP_URL + "?callback=" + callbackName + "&dados=" + encodeURIComponent(dados);
+  document.body.appendChild(script);
+}  function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     chamarGoogle('getDadosEquipes', {}, e => {
       equipes = e;
