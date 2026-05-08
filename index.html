@@ -128,34 +128,39 @@
 
   // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
 function login() {
-  var u = document.getElementById('u').value;
-  var p = document.getElementById('p').value;
+  const u = document.getElementById('u').value;
+  const p = document.getElementById('p').value;
+  
   if(!u || !p) return Swal.fire({ icon: 'info', title: 'Ei!', text: 'Preencha usuário e senha.' });
 
   Swal.fire({ title: 'Aguarde...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
+  // Usando a rota de ação explicitamente
   chamarGoogle('verificarLogin', {u: u, p: p}, function(r) {
     Swal.close();
-    if(r.sucesso) {
+    console.log("Resposta recebida:", r); // Isso vai aparecer no seu Console se funcionar
+
+    if(r && r.sucesso) {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
 
-      // --- TRAVA DE SEGURANÇA AQUI ---
+      // Trava de visualização para não-ADM
       if(r.nivel !== 'ADM') {
-        document.getElementById('tabR').style.display = 'none'; // Esconde aba Histórico
-        document.getElementById('btnPdf').style.display = 'none'; // Garante que o botão PDF suma
-      } else {
-        document.getElementById('tabR').style.display = 'block';
+        document.getElementById('tabR').style.display = 'none';
+        if(document.getElementById('btnPdf')) document.getElementById('btnPdf').style.display = 'none';
       }
       
       init();
     } else {
-      Swal.fire({ icon: 'warning', title: 'Acesso Negado', html: r.msg });
+      Swal.fire({ 
+        icon: (r && r.msg && r.msg.includes('BLOQUEADO')) ? 'error' : 'warning', 
+        title: 'Sistema CMR', 
+        html: r ? r.msg : "Erro desconhecido no servidor." 
+      });
     }
   });
 }
-
   function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     chamarGoogle('getDadosEquipes', {}, e => {
