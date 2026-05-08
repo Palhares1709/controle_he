@@ -87,65 +87,41 @@
 </div>
 
 <script>
-  // URL DA SUA API NO GOOGLE (Mantenha esta URL)
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
-
   let equipes = {}, relData = null;
 
-  // FUNÇÃO DE PONTE PARA O GOOGLE
-  async function comunicarComGoogle(funcao, parametros = {}) {
-    const url = `${WEB_APP_URL}?action=${funcao}`;
-    try {
-      const resposta = await fetch(url, {
-        method: 'POST',
-        mode: 'no-cors', // Necessário para evitar erro de redirecionamento no Google
-        cache: 'no-cache',
-        body: JSON.stringify(parametros)
-      });
-      // Como 'no-cors' não permite ler a resposta, usaremos uma técnica de JSONP ou 
-      // precisaremos que o Google retorne um objeto que possamos capturar se mudarmos para 'cors'.
-      // Para este ambiente, vamos disparar e aguardar (ideal para salvar).
-      // Se precisar de RETORNO (login/busca), o seu Código.gs deve estar preparado.
-    } catch (e) {
-      console.error("Erro na comunicação", e);
-    }
+  function chamarGoogle(funcao, dados, callback) {
+    fetch(WEB_APP_URL + "?action=" + funcao, {
+      method: 'POST',
+      body: JSON.stringify(dados)
+    })
+    .then(res => res.json())
+    .then(res => callback(res))
+    .catch(err => {
+      Swal.close();
+      console.error(err);
+    });
   }
 
-  // VERSÃO COMPATÍVEL COM FETCH PARA RETORNO DE DADOS
-  // --- NO SEU index.html NO GITHUB ---
+  function login() {
+    var u = document.getElementById('u').value;
+    var p = document.getElementById('p').value;
+    if(!u || !p) return Swal.fire({ icon: 'info', title: 'Ei!', text: 'Preencha usuário e senha.' });
+    Swal.fire({ title: 'Aguarde...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+    chamarGoogle('verificarLogin', {u: u, p: p}, function(r) {
+      Swal.close();
+      if(r.sucesso) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('nomeUsuario').innerText = r.nome;
+        init();
+      } else {
+        Swal.fire({ icon: 'warning', title: 'Sistema CMR', html: r.msg });
+      }
+    });
+  }
 
-function chamarGoogle(funcao, dados, callback) {
-  fetch(WEB_APP_URL + "?action=" + funcao, {
-    method: 'POST',
-    body: JSON.stringify(dados)
-  })
-  .then(res => res.json())
-  .then(res => callback(res))
-  .catch(err => {
-    Swal.close();
-    console.error(err);
-  });
-}}  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
-function login() {
-  var u = document.getElementById('u').value;
-  var p = document.getElementById('p').value;
-  
-  if(!u || !p) return Swal.fire({ icon: 'info', title: 'Ei!', text: 'Preencha usuário e senha.' });
-
-  Swal.fire({ title: 'Aguarde...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-
-  chamarGoogle('verificarLogin', {u: u, p: p}, function(r) {
-    Swal.close();
-    if(r.sucesso) {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('nomeUsuario').innerText = r.nome;
-      init();
-    } else {
-      Swal.fire({ icon: 'warning', title: 'Sistema CMR', html: r.msg });
-    }
-  });
-}}}  function init() {
+  function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     chamarGoogle('getDadosEquipes', {}, e => {
       equipes = e;
@@ -183,13 +159,9 @@ function login() {
     const data = document.getElementById('data').value;
     const he = document.getElementById('he').value, hs = document.getElementById('hs').value;
     const obs = document.getElementById('obs').value.trim(), tot = document.getElementById('tot').value;
-
     if (s.length === 0 || !comp || !he || !hs || !obs) return Swal.fire('Atenção', 'Preencha todos os campos obrigatórios.', 'warning');
-    if (he >= hs) return Swal.fire('Erro', 'Entrada não pode ser maior que saída.', 'error');
-
     const btn = document.getElementById('btnSalvar');
     btn.disabled = true; btn.innerHTML = 'GRAVANDO...';
-
     chamarGoogle('salvarHorasLote', { selecionados: s, data: data, competencia: comp, hEntrada: he, hSaida: hs, totalDia: tot, obs: obs }, m => {
       Swal.fire({ icon: 'success', title: 'Sucesso!', text: m, timer: 2000 });
       document.getElementById('he').value = ""; document.getElementById('hs').value = "";
@@ -209,7 +181,6 @@ function login() {
     const c = document.getElementById('colabSel').value, m = document.getElementById('mesI').value;
     if(!m) return Swal.fire('Atenção!', 'Digite a competência', 'info');
     document.getElementById('btnBusca').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    
     chamarGoogle('buscarRelatorio', {c: c, m: m}, r => {
       relData = r; 
       document.getElementById('btnBusca').innerHTML = '<i class="fas fa-search"></i>';
@@ -229,7 +200,6 @@ function login() {
     const btn = document.getElementById('btnPdf');
     btn.disabled = true; btn.innerHTML = 'GERANDO...';
     const funcaoServidor = (relData.modo === 'todos') ? 'gerarPDFTodos' : 'gerarPDF';
-
     chamarGoogle(funcaoServidor, relData, b => {
       const a = document.createElement('a');
       a.href = "data:application/pdf;base64," + b;
