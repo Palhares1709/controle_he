@@ -115,45 +115,21 @@
   // --- NO SEU index.html NO GITHUB ---
 
 function chamarGoogle(funcao, dados, callback) {
-  // Adicionamos os dados na URL para evitar bloqueios de segurança (CORS)
   const urlFinal = WEB_APP_URL + "?action=" + funcao;
-  
+
   fetch(urlFinal, {
     method: 'POST',
-    mode: 'no-cors', // Isso evita o erro de redirecionamento do Google
-    body: JSON.stringify(dados)
+    body: JSON.stringify(dados),
+    redirect: 'follow' // Essencial para o Google Apps Script
   })
-  .then(() => {
-    // Como o 'no-cors' não permite ler a resposta diretamente por segurança,
-    // vamos usar um pequeno truque: chamar via GET para buscas e POST para salvar.
-    // Mas para o seu sistema agora, tente esta versão simplificada:
-    
-    // Se for apenas para SALVAR, o no-cors funciona. 
-    // Para LOGIN (que precisa de resposta), precisamos mudar a estratégia abaixo:
-    executarComResposta(funcao, dados, callback);
+  .then(response => response.json())
+  .then(res => callback(res))
+  .catch(error => {
+    Swal.close();
+    console.error('Erro:', error);
+    // Se o erro persistir, ele aparecerá aqui no Console (F12)
   });
 }
-
-// ESTA FUNÇÃO VAI RESOLVER O LOGIN:
-function executarComResposta(funcao, dados, callback) {
-  const queryParams = new URLSearchParams({
-    action: funcao,
-    dados: JSON.stringify(dados)
-  }).toString();
-
-  const script = document.createElement('script');
-  const nomeCallback = 'callback_' + Math.round(Math.random() * 1000000);
-  
-  window[nomeCallback] = function(response) {
-    delete window[nomeCallback];
-    document.body.removeChild(script);
-    callback(response);
-  };
-
-  script.src = WEB_APP_URL + "?" + queryParams + "&prefix=" + nomeCallback;
-  document.body.appendChild(script);
-}
-
   // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
 function login() {
   const u = document.getElementById('u').value;
