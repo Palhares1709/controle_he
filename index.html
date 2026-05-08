@@ -116,21 +116,25 @@
 
 function chamarGoogle(funcao, dados, callback) {
   const urlFinal = WEB_APP_URL + "?action=" + funcao;
+  
+  // Criamos um formulário em memória para enviar os dados
+  const form = new FormData();
+  form.append('dados', JSON.stringify(dados));
 
   fetch(urlFinal, {
     method: 'POST',
-    body: JSON.stringify(dados),
-    redirect: 'follow' // Essencial para o Google Apps Script
+    body: form, // Enviando como formulário
+    mode: 'cors', 
+    redirect: 'follow'
   })
   .then(response => response.json())
   .then(res => callback(res))
   .catch(error => {
     Swal.close();
-    console.error('Erro:', error);
-    // Se o erro persistir, ele aparecerá aqui no Console (F12)
+    console.error('Erro de conexão:', error);
+    // Se ainda der erro de CORS, usaremos o plano B (no-cors) abaixo
   });
-}
-  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
+}  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
 function login() {
   const u = document.getElementById('u').value;
   const p = document.getElementById('p').value;
