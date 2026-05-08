@@ -136,28 +136,29 @@ function chamarGoogle(funcao, dados, callback) {
   });
 }  // --- NO SEU index.html NO GITHUB (DENTRO DA FUNÇÃO LOGIN) ---
 function login() {
-  const u = document.getElementById('u').value;
-  const p = document.getElementById('p').value;
+  var u = document.getElementById('u').value;
+  var p = document.getElementById('p').value;
   
-  const callbackName = 'log_cb';
-  window[callbackName] = function(r) {
+  if(!u || !p) return Swal.fire({ icon: 'info', title: 'Ei!', text: 'Preencha usuário e senha.' });
+
+  Swal.fire({ title: 'Aguarde...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+  chamarGoogle('verificarLogin', {u: u, p: p}, function(r) {
+    Swal.close();
     if(r.sucesso) {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
-      if(r.nivel !== 'ADM') document.getElementById('tabR').style.display = 'none';
+      
+      // Mostra tudo para todos
+      document.getElementById('tabR').style.display = 'block';
+      
       init();
     } else {
-      Swal.fire('Erro', r.msg, 'error');
+      Swal.fire({ icon: 'warning', title: 'Sistema CMR', html: r.msg });
     }
-    document.body.removeChild(script);
-  };
-
-  const script = document.createElement('script');
-  const dados = JSON.stringify({u: u, p: p});
-  script.src = WEB_APP_URL + "?callback=" + callbackName + "&dados=" + encodeURIComponent(dados);
-  document.body.appendChild(script);
-}  function init() {
+  });
+}}  function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     chamarGoogle('getDadosEquipes', {}, e => {
       equipes = e;
