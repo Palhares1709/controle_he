@@ -158,19 +158,29 @@
   }
 
   function buscarRelatorio() {
-    const colab = document.getElementById('relColab').value;
-    const mes = document.getElementById('relMes').value;
-    if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
-    Swal.fire({ title: 'Buscando histórico...', didOpen: () => { Swal.showLoading() } });
+  const colab = document.getElementById('relColab').value;
+  const mes = document.getElementById('relMes').value;
+  if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
+  
+  Swal.fire({ title: 'Buscando histórico...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-    fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
-      .then(res => res.json())
-      .then(r => {
-        Swal.close();
-        dadosRelatorioAtual = r;
-        exibirTabela(r);
-      });
-  }
+  // Adicionamos o redirect: "follow" para o GitHub não barrar a resposta do Google
+  fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`, {
+    method: "GET",
+    redirect: "follow"
+  })
+  .then(res => res.json())
+  .then(r => {
+    Swal.close();
+    dadosRelatorioAtual = r;
+    exibirTabela(r);
+  })
+  .catch(err => {
+    Swal.close();
+    console.error(err);
+    Swal.fire('Erro', 'Não foi possível carregar o histórico. Verifique se a competência existe.', 'error');
+  });
+}
 
   function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
