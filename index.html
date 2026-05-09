@@ -101,21 +101,18 @@
 
 <script>
   let equipes = {};
-
+const urlSistemas = "SUA_URL_AQUI"; // Cole aqui o link /exec do Google
   // Localize esta parte no final do seu arquivo Index.html no GitHub
 function login() {
   const u = document.getElementById('u').value;
   const p = document.getElementById('p').value;
   
-  // COLE A SUA URL AQUI ENTRE AS ASPAS:
-  const urlWebApp = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec"; 
-
-  if(!u || !p) return Swal.fire('Atenção', 'Preencha os campos.', 'warning');
+  if(!u || !p) return Swal.fire('Atenção', 'Preencha usuário e senha.', 'warning');
 
   Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  // Ajuste para enviar os dados para a URL correta via POST
-  fetch(urlWebApp + "?action=verificarLogin", {
+  // Envia os dados para a CMR Brasil via POST
+  fetch(`${urlSistemas}?action=verificarLogin`, {
     method: "POST",
     body: JSON.stringify({ u: u, p: p })
   })
@@ -126,25 +123,33 @@ function login() {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
-      init(); // Carrega os dados da CMR Brasil
+      init(); // Carrega as equipes após entrar
     } else {
-      Swal.fire('Falha', r.msg, 'error');
+      Swal.fire('Acesso Negado', r.msg, 'error');
     }
   })
   .catch(() => {
     Swal.close();
-    Swal.fire('Erro', 'Não foi possível conectar ao servidor.', 'error');
+    Swal.fire('Erro', 'Falha na conexão com o servidor.', 'error');
   });
-}
+}  
   function init() {
-    document.getElementById('data').value = new Date().toISOString().split('T')[0];
-    google.script.run.withSuccessHandler(e => {
-      equipes = e;
-      const s1 = document.getElementById('eqSel');
-      if(s1) Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
-    }).getDadosEquipes();
-  }
+  // Define a data de hoje no formato YYYY-MM-DD para o campo de data
+  document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
+  // Busca as equipes registradas na planilha CMR Brasil
+  fetch(`${urlSistemas}?action=getDadosEquipes`)
+  .then(res => res.json())
+  .then(e => {
+    equipes = e; // Armazena os dados globalmente
+    const s1 = document.getElementById('eqSel');
+    if(s1) {
+      s1.innerHTML = '<option value="">Selecione...</option>';
+      Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
+    }
+  })
+  .catch(err => console.log("Erro ao carregar equipes:", err));
+}
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
     if(!eq) { div.innerHTML = ""; ctrl.style.display="none"; return; }
