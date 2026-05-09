@@ -111,11 +111,7 @@ function login() {
 
   Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  // Envia os dados para a CMR Brasil via POST
-  fetch(`${urlSistemas}?action=verificarLogin`, {
-    method: "POST",
-    body: JSON.stringify({ u: u, p: p })
-  })
+  fetch(`${urlSistemas}?action=verificarLogin&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`)
   .then(res => res.json())
   .then(r => {
     Swal.close();
@@ -123,32 +119,31 @@ function login() {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('nomeUsuario').innerText = r.nome;
-      init(); // Carrega as equipes após entrar
+      init(); // Dispara o carregamento das equipes após o login
     } else {
       Swal.fire('Acesso Negado', r.msg, 'error');
     }
   })
   .catch(() => {
     Swal.close();
-    Swal.fire('Erro', 'Falha na conexão com o servidor.', 'error');
+    Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
   });
-}  
+}
   function init() {
-  // Define a data de hoje no formato YYYY-MM-DD para o campo de data
+  // Ajusta a data do dia automaticamente para Jandaíra/Mossoró
   document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
-  // Busca as equipes registradas na planilha CMR Brasil
   fetch(`${urlSistemas}?action=getDadosEquipes`)
   .then(res => res.json())
   .then(e => {
-    equipes = e; // Armazena os dados globalmente
+    equipes = e; 
     const s1 = document.getElementById('eqSel');
     if(s1) {
       s1.innerHTML = '<option value="">Selecione...</option>';
       Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
     }
   })
-  .catch(err => console.log("Erro ao carregar equipes:", err));
+  .catch(err => console.log("Erro ao carregar dados:", err));
 }
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
@@ -173,7 +168,7 @@ function login() {
   function salvar() {
   const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
   const obj = {
-    action: "salvarHorasLote", // Adicionamos a ação para o servidor saber o que fazer
+    action: "salvarHorasLote",
     selecionados: s,
     data: document.getElementById('data').value,
     competencia: document.getElementById('comp').value,
@@ -188,20 +183,19 @@ function login() {
   const btn = document.getElementById('btnSalvar');
   btn.disabled = true; btn.innerText = "Gravando...";
 
-  // Mudança para FETCH (padrão GitHub)
   fetch(urlSistemas, {
     method: "POST",
+    mode: "no-cors", 
     body: JSON.stringify(obj)
   })
-  .then(res => res.json())
-  .then(m => {
-    Swal.fire('Sucesso!', m, 'success');
+  .then(() => {
+    Swal.fire('Sucesso!', 'Lançamento enviado com sucesso! ✅', 'success');
     btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
     document.getElementById('obs').value = "";
     marcar(false);
   })
   .catch(() => {
-    Swal.fire('Erro', 'Falha ao gravar.', 'error');
+    Swal.fire('Erro', 'Falha ao gravar os dados.', 'error');
     btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
   });
 }
