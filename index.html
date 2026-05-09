@@ -130,9 +130,10 @@ function login() {
   });
 }
   function init() {
+  // Ajusta a data do dia automaticamente para Jandaíra/Mossoró
   document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
-  // Mudamos para incluir o redirecionamento e evitar bloqueio do GitHub
+  // Busca as equipes registradas na planilha CMR Brasil
   fetch(`${urlSistemas}?action=getDadosEquipes`, {
     method: "GET",
     redirect: "follow"
@@ -140,17 +141,23 @@ function login() {
   .then(res => res.json())
   .then(e => {
     equipes = e; 
+    
+    // Preenche o seletor de Equipes (Aba Lançar)
     const s1 = document.getElementById('eqSel');
     if(s1) {
       s1.innerHTML = '<option value="">Selecione...</option>';
       Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
     }
+
+    // Preenche o seletor de Colaboradores (Aba Histórico)
+    const sRel = document.getElementById('relColab');
+    if(sRel) {
+      sRel.innerHTML = '<option value="todos">GERAL (TODOS)</option>';
+      // Une todas as equipes e coloca os nomes em ordem alfabética
+      Object.values(e).flat().sort().forEach(n => sRel.add(new Option(n, n)));
+    }
   })
-  .catch(err => {
-    console.error("Erro ao carregar dados:", err);
-    // Tenta uma segunda vez se a primeira falhar (comum no GitHub)
-    setTimeout(init, 2000); 
-  });
+  .catch(err => console.log("Erro ao carregar dados:", err));
 }
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
