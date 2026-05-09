@@ -171,30 +171,40 @@ function login() {
   }
 
   function salvar() {
-    const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
-    const obj = {
-      selecionados: s,
-      data: document.getElementById('data').value,
-      competencia: document.getElementById('comp').value,
-      hEntrada: document.getElementById('he').value,
-      hSaida: document.getElementById('hs').value,
-      totalDia: document.getElementById('tot').value,
-      obs: document.getElementById('obs').value
-    };
-    
-    if(!s.length || !obj.competencia || !obj.obs) return Swal.fire('Atenção', 'Preencha todos os campos e selecione ao menos um colaborador.', 'warning');
+  const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
+  const obj = {
+    action: "salvarHorasLote", // Adicionamos a ação para o servidor saber o que fazer
+    selecionados: s,
+    data: document.getElementById('data').value,
+    competencia: document.getElementById('comp').value,
+    hEntrada: document.getElementById('he').value,
+    hSaida: document.getElementById('hs').value,
+    totalDia: document.getElementById('tot').value,
+    obs: document.getElementById('obs').value
+  };
+  
+  if(!s.length || !obj.competencia || !obj.obs) return Swal.fire('Atenção', 'Preencha todos os campos.', 'warning');
 
-    const btn = document.getElementById('btnSalvar');
-    btn.disabled = true; btn.innerText = "Gravando...";
+  const btn = document.getElementById('btnSalvar');
+  btn.disabled = true; btn.innerText = "Gravando...";
 
-    google.script.run.withSuccessHandler(m => {
-      Swal.fire('Sucesso!', m, 'success');
-      btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
-      document.getElementById('obs').value = "";
-      marcar(false);
-    }).salvarHorasLote(obj);
-  }
-
+  // Mudança para FETCH (padrão GitHub)
+  fetch(urlSistemas, {
+    method: "POST",
+    body: JSON.stringify(obj)
+  })
+  .then(res => res.json())
+  .then(m => {
+    Swal.fire('Sucesso!', m, 'success');
+    btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
+    document.getElementById('obs').value = "";
+    marcar(false);
+  })
+  .catch(() => {
+    Swal.fire('Erro', 'Falha ao gravar.', 'error');
+    btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
+  });
+}
   function tab(t) {
     document.getElementById('sec-lancar').style.display = t === 'lancar' ? 'block' : 'none';
     document.getElementById('tabL').classList.toggle('active', t === 'lancar');
