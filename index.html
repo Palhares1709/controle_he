@@ -130,10 +130,13 @@ function login() {
   });
 }
   function init() {
-  // Ajusta a data do dia automaticamente para Jandaíra/Mossoró
   document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
-  fetch(`${urlSistemas}?action=getDadosEquipes`)
+  // Mudamos para incluir o redirecionamento e evitar bloqueio do GitHub
+  fetch(`${urlSistemas}?action=getDadosEquipes`, {
+    method: "GET",
+    redirect: "follow"
+  })
   .then(res => res.json())
   .then(e => {
     equipes = e; 
@@ -143,7 +146,11 @@ function login() {
       Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
     }
   })
-  .catch(err => console.log("Erro ao carregar dados:", err));
+  .catch(err => {
+    console.error("Erro ao carregar dados:", err);
+    // Tenta uma segunda vez se a primeira falhar (comum no GitHub)
+    setTimeout(init, 2000); 
+  });
 }
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
