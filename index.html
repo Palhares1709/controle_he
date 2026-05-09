@@ -12,7 +12,7 @@
     :root { --primary: #1e293b; --bg: #f8fafc; }
     body { background: var(--bg); font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; overflow-x: hidden; }
 
-    /* LOGIN RESPONSIVO - PREENCHE A TELA NO MOBILE */
+    /* LOGIN RESPONSIVO */
     #loginPage { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: var(--primary); z-index: 9999; 
@@ -31,7 +31,6 @@
     .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); }
     .nav-item i { display: block; font-size: 20px; margin-bottom: 3px; }
     .btn-main { background: var(--primary); color: white; width: 100%; border-radius: 12px; padding: 15px; font-weight: bold; border: none; transition: 0.3s; }
-    .btn-main:active { transform: scale(0.98); opacity: 0.9; }
     .input-custom { border-radius: 10px; border: 2px solid #e2e8f0; padding: 12px; width: 100%; font-size: 16px; }
     .colab-box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; max-height: 200px; overflow-y: auto; background: white; }
     .btn-pill { border-radius: 20px; font-size: 10px; font-weight: 800; padding: 4px 12px; text-transform: uppercase; border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; }
@@ -44,15 +43,11 @@
   <div class="login-card">
     <div class="mb-4">
       <i class="fas fa-user-shield fa-3x mb-3" style="color:var(--primary)"></i>
-      <h4 class="fw-bold" style="color:var(--primary); letter-spacing: -1px;">LOGIN</h4>
+      <h4 class="fw-bold" style="color:var(--primary); letter-spacing: -1px;">SISTEMA CMR</h4>
       <p class="text-muted small">Controle de Horas Extras</p>
     </div>
-    <div class="mb-3">
-      <input type="text" id="u" class="form-control input-custom" placeholder="Usuário" autocomplete="off">
-    </div>
-    <div class="mb-4">
-      <input type="password" id="p" class="form-control input-custom" placeholder="Senha">
-    </div>
+    <input type="text" id="u" class="form-control input-custom mb-3" placeholder="Usuário" autocomplete="off">
+    <input type="password" id="p" class="form-control input-custom mb-4" placeholder="Senha">
     <button onclick="login()" class="btn-main shadow-lg">ACESSAR SISTEMA</button>
   </div>
 </div>
@@ -64,6 +59,7 @@
     <h5 id="nomeUsuario" class="fw-bold m-0">OPERADOR</h5>
   </div>
 
+  <!-- SEÇÃO LANÇAR -->
   <div id="sec-lancar" class="section">
     <div class="card p-3 shadow-sm">
       <label class="small fw-bold text-muted mb-1">EQUIPE</label>
@@ -93,6 +89,19 @@
     </div>
   </div>
 
+  <!-- SEÇÃO HISTÓRICO -->
+  <div id="sec-rel-filtro" class="section" style="display:none;">
+    <div class="card p-3 shadow-sm">
+      <label class="small fw-bold text-muted mb-1">COLABORADOR</label>
+      <select id="relColab" class="form-select input-custom mb-3"></select>
+      <label class="small fw-bold text-muted mb-1">COMPETÊNCIA</label>
+      <input type="text" id="relMes" class="input-custom mb-3" placeholder="ex: maio2026">
+      <button onclick="buscarRelatorio()" class="btn-main mb-3">BUSCAR HISTÓRICO <i class="fas fa-search"></i></button>
+      
+      <div id="sec-rel"></div> <!-- Onde a tabela aparece -->
+    </div>
+  </div>
+
   <div class="nav-bottom">
     <div id="tabL" class="nav-item active" onclick="tab('lancar')"><i class="fas fa-edit"></i>LANÇAR</div>
     <div id="tabR" class="nav-item" onclick="tab('rel')"><i class="fas fa-history"></i>HISTÓRICO</div>
@@ -101,168 +110,161 @@
 
 <script>
   let equipes = {};
-const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec"; // Cole aqui o link /exec do Google
-  // Localize esta parte no final do seu arquivo Index.html no GitHub
-function login() {
-  const u = document.getElementById('u').value;
-  const p = document.getElementById('p').value;
-  
-  if(!u || !p) return Swal.fire('Atenção', 'Preencha usuário e senha.', 'warning');
+  const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
+  let dadosRelatorioAtual = null;
 
-  Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+  function login() {
+    const u = document.getElementById('u').value;
+    const p = document.getElementById('p').value;
+    if (!u || !p) return Swal.fire('Atenção', 'Preencha usuário e senha.', 'warning');
+    Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  fetch(`${urlSistemas}?action=verificarLogin&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`)
-  .then(res => res.json())
-  .then(r => {
-    Swal.close();
-    if(r.sucesso) {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('nomeUsuario').innerText = r.nome;
-      init(); // Dispara o carregamento das equipes após o login
-    } else {
-      Swal.fire('Acesso Negado', r.msg, 'error');
-    }
-  })
-  .catch(() => {
-    Swal.close();
-    Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
- let dadosRelatorioAtual = null; // Variável global para guardar o resultado da busca
-
-function buscarRelatorio() {
-  const colab = document.getElementById('relColab').value;
-  const mes = document.getElementById('relMes').value;
-
-  if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
-
-  Swal.fire({ title: 'Buscando histórico...', didOpen: () => { Swal.showLoading() } });
-
-  fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
-    .then(res => res.json())
-    .then(r => {
-      Swal.close();
-      dadosRelatorioAtual = r; // Salva para uso posterior na geração do PDF
-      exibirTabela(r);        // Chama a função que desenha a tabela na tela
-    })
-    .catch(() => {
-      Swal.close();
-      Swal.fire('Erro', 'Não foi possível carregar o histórico do servidor.', 'error');
-   function baixarPDF(tipo) {
-  if (!dadosRelatorioAtual || (tipo === 'individual' && !dadosRelatorioAtual.logs.length)) {
-    return Swal.fire('Aviso', 'Não há dados para gerar o PDF.', 'info');
+    fetch(`${urlSistemas}?action=verificarLogin&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`)
+      .then(res => res.json())
+      .then(r => {
+        Swal.close();
+        if (r.sucesso) {
+          document.getElementById('loginPage').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+          document.getElementById('nomeUsuario').innerText = r.nome;
+          init();
+        } else {
+          Swal.fire('Acesso Negado', r.msg, 'error');
+        }
+      })
+      .catch(() => {
+        Swal.close();
+        Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
+      });
   }
 
-  const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
-  
-  Swal.fire({ title: 'Gerando documento...', didOpen: () => { Swal.showLoading() } });
-
-  fetch(urlSistemas, {
-    method: "POST",
-    body: JSON.stringify({ action: action, ...dadosRelatorioAtual }) 
-  })
-  .then(res => res.json())
-  .then(base64 => {
-    Swal.close();
-    // Inicia o download automático do PDF
-    const link = document.createElement('a');
-    link.href = `data:application/pdf;base64,${base64}`;
-    link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
-    link.click();
-  })
-  .catch(() => {
-    Swal.close();
-    Swal.fire('Erro', 'Falha ao processar o arquivo PDF.', 'error');
-  });
-}
-  });
-}
   function init() {
-  // Ajusta a data do dia automaticamente para Jandaíra/Mossoró
-  document.getElementById('data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('data').value = new Date().toISOString().split('T')[0];
+    fetch(`${urlSistemas}?action=getDadosEquipes`, { method: "GET", redirect: "follow" })
+      .then(res => res.json())
+      .then(e => {
+        equipes = e;
+        const s1 = document.getElementById('eqSel');
+        if (s1) {
+          s1.innerHTML = '<option value="">Selecione...</option>';
+          Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
+        }
+        const sRel = document.getElementById('relColab');
+        if (sRel) {
+          sRel.innerHTML = '<option value="todos">GERAL (TODOS)</option>';
+          Object.values(e).flat().sort().forEach(n => sRel.add(new Option(n, n)));
+        }
+      });
+  }
 
-  // Busca as equipes registradas na planilha CMR Brasil
-  fetch(`${urlSistemas}?action=getDadosEquipes`, {
-    method: "GET",
-    redirect: "follow"
-  })
-  .then(res => res.json())
-  .then(e => {
-    equipes = e; 
-    
-    // Preenche o seletor de Equipes (Aba Lançar)
-    const s1 = document.getElementById('eqSel');
-    if(s1) {
-      s1.innerHTML = '<option value="">Selecione...</option>';
-      Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
+  function buscarRelatorio() {
+    const colab = document.getElementById('relColab').value;
+    const mes = document.getElementById('relMes').value;
+    if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
+    Swal.fire({ title: 'Buscando histórico...', didOpen: () => { Swal.showLoading() } });
+
+    fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
+      .then(res => res.json())
+      .then(r => {
+        Swal.close();
+        dadosRelatorioAtual = r;
+        exibirTabela(r);
+      });
+  }
+
+  function exibirTabela(r) {
+    const div = document.getElementById('sec-rel');
+    if (!div) return;
+    let html = `<div class="card p-3 shadow-sm border mt-3">
+      <h6 class="fw-bold text-primary">${r.colab === 'todos' ? 'Resumo Geral' : r.colab}</h6>
+      <p class="small text-muted mb-3">Total: <b>${r.total}</b></p>`;
+
+    if (r.modo === 'individual') {
+      html += `<div class="table-responsive"><table class="table table-sm small">
+        <thead><tr><th>Data</th><th>Total</th></tr></thead><tbody>`;
+      r.logs.forEach(l => { html += `<tr><td>${l.data}</td><td>${l.total}</td></tr>`; });
+      html += `</tbody></table></div>`;
+    } else {
+      html += `<ul class="list-group list-group-flush small">`;
+      r.resumo.forEach(i => { html += `<li class="list-group-item d-flex justify-content-between"><span>${i.nome}</span><b>${i.total}</b></li>`; });
+      html += `</ul>`;
     }
 
-    // Preenche o seletor de Colaboradores (Aba Histórico)
-    const sRel = document.getElementById('relColab');
-    if(sRel) {
-      sRel.innerHTML = '<option value="todos">GERAL (TODOS)</option>';
-      // Une todas as equipes e coloca os nomes em ordem alfabética
-      Object.values(e).flat().sort().forEach(n => sRel.add(new Option(n, n)));
-    }
-  })
-  .catch(err => console.log("Erro ao carregar dados:", err));
-}
+    html += `<div class="d-flex gap-2 mt-3">
+      <button onclick="baixarPDF('individual')" class="btn btn-danger btn-sm w-100">PDF</button>
+      ${r.modo === 'todos' ? `<button onclick="baixarPDF('todos')" class="btn btn-dark btn-sm w-100">GERAL</button>` : ''}
+    </div></div>`;
+    div.innerHTML = html;
+  }
+
+  function baixarPDF(tipo) {
+    const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
+    Swal.fire({ title: 'Gerando PDF...', didOpen: () => { Swal.showLoading() } });
+
+    fetch(urlSistemas, {
+      method: "POST",
+      body: JSON.stringify({ action: action, ...dadosRelatorioAtual })
+    })
+    .then(res => res.json())
+    .then(base64 => {
+      Swal.close();
+      const link = document.createElement('a');
+      link.href = `data:application/pdf;base64,${base64}`;
+      link.download = `Relatorio_${dadosRelatorioAtual.mes}.pdf`;
+      link.click();
+    });
+  }
+
+  function salvar() {
+    const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
+    const obj = {
+      action: "salvarHorasLote",
+      selecionados: s,
+      data: document.getElementById('data').value,
+      competencia: document.getElementById('comp').value,
+      hEntrada: document.getElementById('he').value,
+      hSaida: document.getElementById('hs').value,
+      totalDia: document.getElementById('tot').value,
+      obs: document.getElementById('obs').value
+    };
+    if (!s.length || !obj.competencia || !obj.obs) return Swal.fire('Atenção', 'Preencha tudo.', 'warning');
+    const btn = document.getElementById('btnSalvar');
+    btn.disabled = true; btn.innerText = "Gravando...";
+
+    fetch(urlSistemas, { method: "POST", mode: "no-cors", body: JSON.stringify(obj) })
+      .then(() => {
+        Swal.fire('Sucesso!', 'Gravado! ✅', 'success');
+        btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
+        document.getElementById('obs').value = "";
+        marcar(false);
+      });
+  }
+
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
-    if(!eq) { div.innerHTML = ""; ctrl.style.display="none"; return; }
-    ctrl.style.display="flex";
-    div.innerHTML = equipes[eq].map(n => `<div class="mb-2"><label class="d-flex align-items-center"><input type="checkbox" name="c" value="${n}" class="form-check-input me-2" style="width:20px;height:20px"> ${n}</label></div>`).join('');
+    if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
+    ctrl.style.display = "flex";
+    div.innerHTML = equipes[eq].map(n => `<div class="mb-2"><label class="d-flex align-items-center"><input type="checkbox" name="c" value="${n}" class="form-check-input me-2"> ${n}</label></div>`).join('');
   }
 
   function marcar(v) { document.querySelectorAll('input[name="c"]').forEach(c => c.checked = v); }
 
   function calc() {
     const h1 = document.getElementById('he').value, h2 = document.getElementById('hs').value;
-    if(h1 && h2) {
-      let d1 = new Date("2000-01-01T"+h1), d2 = new Date("2000-01-01T"+h2);
-      if(d2 < d1) d2.setDate(d2.getDate()+1);
+    if (h1 && h2) {
+      let d1 = new Date("2000-01-01T" + h1), d2 = new Date("2000-01-01T" + h2);
+      if (d2 < d1) d2.setDate(d2.getDate() + 1);
       let diff = d2 - d1;
-      let h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
-      document.getElementById('tot').value = h.toString().padStart(2,'0')+":"+m.toString().padStart(2,'0');
+      let h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+      document.getElementById('tot').value = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
     }
   }
 
-  function salvar() {
-  const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
-  const obj = {
-    action: "salvarHorasLote",
-    selecionados: s,
-    data: document.getElementById('data').value,
-    competencia: document.getElementById('comp').value,
-    hEntrada: document.getElementById('he').value,
-    hSaida: document.getElementById('hs').value,
-    totalDia: document.getElementById('tot').value,
-    obs: document.getElementById('obs').value
-  };
-  
-  if(!s.length || !obj.competencia || !obj.obs) return Swal.fire('Atenção', 'Preencha todos os campos.', 'warning');
-
-  const btn = document.getElementById('btnSalvar');
-  btn.disabled = true; btn.innerText = "Gravando...";
-
-  fetch(urlSistemas, {
-    method: "POST",
-    mode: "no-cors", 
-    body: JSON.stringify(obj)
-  })
-  .then(() => {
-    Swal.fire('Sucesso!', 'Lançamento enviado com sucesso! ✅', 'success');
-    btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
-    document.getElementById('obs').value = "";
-    marcar(false);
-  })
-  .catch(() => {
-    Swal.fire('Erro', 'Falha ao gravar os dados.', 'error');
-    btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
-  });
-}
   function tab(t) {
     document.getElementById('sec-lancar').style.display = t === 'lancar' ? 'block' : 'none';
+    document.getElementById('sec-rel-filtro').style.display = t === 'rel' ? 'block' : 'none';
     document.getElementById('tabL').classList.toggle('active', t === 'lancar');
+    document.getElementById('tabR').classList.toggle('active', t === 'rel');
   }
 </script>
 </body>
