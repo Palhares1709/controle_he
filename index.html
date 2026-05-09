@@ -234,29 +234,68 @@
 }
   function salvar() {
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
-    const obj = {
-      action: "salvarHorasLote",
-      selecionados: s,
-      data: document.getElementById('data').value,
-      competencia: document.getElementById('comp').value,
-      hEntrada: document.getElementById('he').value,
-      hSaida: document.getElementById('hs').value,
-      totalDia: document.getElementById('tot').value,
-      obs: document.getElementById('obs').value
-    };
-    if (!s.length || !obj.competencia || !obj.obs) return Swal.fire('Atenção', 'Preencha tudo.', 'warning');
-    const btn = document.getElementById('btnSalvar');
-    btn.disabled = true; btn.innerText = "Gravando...";
+    const comp = document.getElementById('comp').value.trim();
+    const data = document.getElementById('data').value;
+    const he = document.getElementById('he').value; // Hora Entrada
+    const hs = document.getElementById('hs').value; // Hora Saída
+    const obs = document.getElementById('obs').value.trim();
+    const tot = document.getElementById('tot').value;
 
-    fetch(urlSistemas, { method: "POST", mode: "no-cors", body: JSON.stringify(obj) })
-      .then(() => {
-        Swal.fire('Sucesso!', 'Gravado! ✅', 'success');
-        btn.disabled = false; btn.innerText = "GRAVAR LANÇAMENTO ✅";
-        document.getElementById('obs').value = "";
-        marcar(false);
+    // --- VALIDAÇÕES DE PREENCHIMENTO ---
+    if (s.length === 0) return Swal.fire({ icon: 'warning', title: 'Ops!', text: 'Selecione os colaboradores.', confirmButtonColor: '#1e293b' });
+    if (!comp) return Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Preencha a COMPETÊNCIA.', confirmButtonColor: '#1e293b' });
+    if (!he || !hs) return Swal.fire({ icon: 'warning', title: 'Horário', text: 'Preencha ENTRADA e SAÍDA.', confirmButtonColor: '#1e293b' });
+    
+    // --- TRAVA DE SEGURANÇA: ENTRADA NÃO PODE SER MAIOR OU IGUAL À SAÍDA ---
+    if (he >= hs) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Horário Inválido',
+        text: 'A hora de ENTRADA deve ser menor que a hora de SAÍDA. O sistema não permite turnos que ultrapassam a meia-noite.',
+        confirmButtonColor: '#1e293b'
       });
-  }
+    }
 
+    if (!obs) return Swal.fire({ icon: 'warning', title: 'Observação', text: 'A justificativa é obrigatória.', confirmButtonColor: '#1e293b' });
+
+    // Bloqueio do botão para evitar cliques duplos
+    const btn = document.getElementById('btnSalvar');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> GRAVANDO...';
+
+    const obj = { 
+      selecionados: s, 
+      data: data, 
+      competencia: comp, 
+      hEntrada: he, 
+      hSaida: hs, 
+      totalDia: tot, 
+      obs: obs 
+    };
+
+    // Envia para o Código.gs
+    google.script.run.withSuccessHandler(m => { 
+      Swal.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: m,
+        confirmButtonColor: '#1e293b',
+        timer: 2000
+      }).then(() => {
+        document.getElementById('he').value = ""; 
+        document.getElementById('hs').value = ""; 
+        document.getElementById('tot').value = "00:00"; 
+        document.getElementById('obs').value = "";
+        marcar(false); 
+        btn.disabled = false; 
+        btn.innerText = "GRAVAR LANÇAMENTO ✅";
+      });
+    }).withFailureHandler(err => {
+      Swal.fire('Erro!', 'Falha ao salvar: ' + err, 'error');
+      btn.disabled = false;
+      btn.innerText = "GRAVAR LANÇAMENTO ✅";
+    }).salvarHorasLote(obj);
+  }
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
     if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
