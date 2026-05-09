@@ -127,6 +127,53 @@ function login() {
   .catch(() => {
     Swal.close();
     Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
+ let dadosRelatorioAtual = null; // Variável global para guardar o resultado da busca
+
+function buscarRelatorio() {
+  const colab = document.getElementById('relColab').value;
+  const mes = document.getElementById('relMes').value;
+
+  if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
+
+  Swal.fire({ title: 'Buscando histórico...', didOpen: () => { Swal.showLoading() } });
+
+  fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
+    .then(res => res.json())
+    .then(r => {
+      Swal.close();
+      dadosRelatorioAtual = r; // Salva para uso posterior na geração do PDF
+      exibirTabela(r);        // Chama a função que desenha a tabela na tela
+    })
+    .catch(() => {
+      Swal.close();
+      Swal.fire('Erro', 'Não foi possível carregar o histórico do servidor.', 'error');
+   function baixarPDF(tipo) {
+  if (!dadosRelatorioAtual || (tipo === 'individual' && !dadosRelatorioAtual.logs.length)) {
+    return Swal.fire('Aviso', 'Não há dados para gerar o PDF.', 'info');
+  }
+
+  const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
+  
+  Swal.fire({ title: 'Gerando documento...', didOpen: () => { Swal.showLoading() } });
+
+  fetch(urlSistemas, {
+    method: "POST",
+    body: JSON.stringify({ action: action, ...dadosRelatorioAtual }) 
+  })
+  .then(res => res.json())
+  .then(base64 => {
+    Swal.close();
+    // Inicia o download automático do PDF
+    const link = document.createElement('a');
+    link.href = `data:application/pdf;base64,${base64}`;
+    link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
+    link.click();
+  })
+  .catch(() => {
+    Swal.close();
+    Swal.fire('Erro', 'Falha ao processar o arquivo PDF.', 'error');
+  });
+}
   });
 }
   function init() {
