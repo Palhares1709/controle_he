@@ -102,32 +102,40 @@
 <script>
   let equipes = {};
 
-  function login() {
-    const u = document.getElementById('u').value;
-    const p = document.getElementById('p').value;
-    if(!u || !p) return Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Preencha os campos.', confirmButtonColor: '#1e293b' });
+  // Localize esta parte no final do seu arquivo Index.html no GitHub
+function login() {
+  const u = document.getElementById('u').value;
+  const p = document.getElementById('p').value;
+  
+  // COLE A SUA URL AQUI ENTRE AS ASPAS:
+  const urlWebApp = "SUA_URL_AQUI_DO_GOOGLE_SHEETS"; 
 
-    Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+  if(!u || !p) return Swal.fire('Atenção', 'Preencha os campos.', 'warning');
 
-    google.script.run
-      .withSuccessHandler(r => {
-        Swal.close();
-        if(r && r.sucesso) {
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('app').style.display = 'block';
-          document.getElementById('nomeUsuario').innerText = r.nome;
-          init();
-        } else {
-          Swal.fire({ icon: 'error', title: 'Falha', text: r.msg || 'Credenciais inválidas.', confirmButtonColor: '#1e293b' });
-        }
-      })
-      .withFailureHandler(() => {
-        Swal.close();
-        Swal.fire({ icon: 'error', title: 'Erro', text: 'Falha na conexão com o servidor.' });
-      })
-      .verificarLogin(u, p);
-  }
+  Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
+  // Ajuste para enviar os dados para a URL correta via POST
+  fetch(urlWebApp + "?action=verificarLogin", {
+    method: "POST",
+    body: JSON.stringify({ u: u, p: p })
+  })
+  .then(res => res.json())
+  .then(r => {
+    Swal.close();
+    if(r.sucesso) {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('nomeUsuario').innerText = r.nome;
+      init(); // Carrega os dados da CMR Brasil
+    } else {
+      Swal.fire('Falha', r.msg, 'error');
+    }
+  })
+  .catch(() => {
+    Swal.close();
+    Swal.fire('Erro', 'Não foi possível conectar ao servidor.', 'error');
+  });
+}
   function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     google.script.run.withSuccessHandler(e => {
