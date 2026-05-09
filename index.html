@@ -236,34 +236,26 @@
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
     const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
-    const he = document.getElementById('he').value; // Hora Entrada
-    const hs = document.getElementById('hs').value; // Hora Saída
+    const he = document.getElementById('he').value;
+    const hs = document.getElementById('hs').value;
     const obs = document.getElementById('obs').value.trim();
     const tot = document.getElementById('tot').value;
 
-    // --- VALIDAÇÕES DE PREENCHIMENTO ---
-    if (s.length === 0) return Swal.fire({ icon: 'warning', title: 'Ops!', text: 'Selecione os colaboradores.', confirmButtonColor: '#1e293b' });
-    if (!comp) return Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Preencha a COMPETÊNCIA.', confirmButtonColor: '#1e293b' });
-    if (!he || !hs) return Swal.fire({ icon: 'warning', title: 'Horário', text: 'Preencha ENTRADA e SAÍDA.', confirmButtonColor: '#1e293b' });
+    // --- VALIDAÇÕES ---
+    if (s.length === 0) return Swal.fire('Atenção', 'Selecione os colaboradores.', 'warning');
+    if (!comp || !he || !hs || !obs) return Swal.fire('Atenção', 'Preencha todos os campos obrigatórios.', 'warning');
     
-    // --- TRAVA DE SEGURANÇA: ENTRADA NÃO PODE SER MAIOR OU IGUAL À SAÍDA ---
+    // --- TRAVA DE HORÁRIO ---
     if (he >= hs) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'Horário Inválido',
-        text: 'A hora de ENTRADA deve ser menor que a hora de SAÍDA. O sistema não permite turnos que ultrapassam a meia-noite.',
-        confirmButtonColor: '#1e293b'
-      });
+      return Swal.fire('Horário Inválido', 'A ENTRADA deve ser menor que a SAÍDA.', 'error');
     }
 
-    if (!obs) return Swal.fire({ icon: 'warning', title: 'Observação', text: 'A justificativa é obrigatória.', confirmButtonColor: '#1e293b' });
-
-    // Bloqueio do botão para evitar cliques duplos
     const btn = document.getElementById('btnSalvar');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> GRAVANDO...';
 
     const obj = { 
+      action: "salvarHorasLote",
       selecionados: s, 
       data: data, 
       competencia: comp, 
@@ -273,15 +265,20 @@
       obs: obs 
     };
 
-    // Envia para o Código.gs
-    google.script.run.withSuccessHandler(m => { 
+    // USANDO FETCH PARA O GITHUB PAGES
+    fetch(urlSistemas, {
+      method: "POST",
+      body: JSON.stringify(obj),
+      mode: "no-cors" // Necessário para evitar erro de CORS no Google
+    })
+    .then(() => {
       Swal.fire({
         icon: 'success',
         title: 'Sucesso!',
-        text: m,
-        confirmButtonColor: '#1e293b',
-        timer: 2000
+        text: 'Lançamento enviado com sucesso! ✅',
+        confirmButtonColor: '#1e293b'
       }).then(() => {
+        // Limpar campos
         document.getElementById('he').value = ""; 
         document.getElementById('hs').value = ""; 
         document.getElementById('tot').value = "00:00"; 
@@ -290,11 +287,13 @@
         btn.disabled = false; 
         btn.innerText = "GRAVAR LANÇAMENTO ✅";
       });
-    }).withFailureHandler(err => {
-      Swal.fire('Erro!', 'Falha ao salvar: ' + err, 'error');
+    })
+    .catch(err => {
+      console.error(err);
+      Swal.fire('Erro', 'Falha ao conectar com o servidor.', 'error');
       btn.disabled = false;
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
-    }).salvarHorasLote(obj);
+    });
   }
   function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
