@@ -109,6 +109,41 @@
 </div>
 
 <script>
+  // Pop-up que abre ao clicar no campo de Competência
+function ajudaCompetencia() {
+  Swal.fire({
+    title: '<span style="font-family: \'Segoe UI\', sans-serif; font-weight: 700; color: #1e293b;">Atenção no Preenchimento</span>',
+    html: `
+      <div style="text-align: left; font-family: \'Segoe UI\', sans-serif; color: #475569; font-size: 16px;">
+        <p>Para o sistema funcionar, o <b>mês</b> e o <b>ano</b> devem estar grudados.</p>
+        <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; border-left: 5px solid #3b82f6;">
+          <b style="color: #059669;">✅ Correto:</b> maio2026<br>
+          <b style="color: #dc2626;">❌ Errado:</b> maio 2026
+        </div>
+        <p style="margin-top: 15px; font-size: 14px;"><i>*Não use espaços, barras ou traços.</i></p>
+      </div>`,
+    icon: 'info',
+    confirmButtonColor: '#1e293b',
+    confirmButtonText: '<span style="padding: 0 20px;">OK, ENTENDI</span>'
+  });
+}
+
+// Função de validação que bloqueia o salvamento se houver erro
+function validarCompetencia(texto) {
+  if (!texto) return false;
+  
+  // Verifica se o usuário digitou espaço em branco
+  if (texto.includes(" ")) {
+    Swal.fire({
+      title: 'Espaço Detectado!',
+      text: 'O campo Competência não permite espaços. Digite tudo junto (ex: maio2026).',
+      icon: 'error',
+      confirmButtonColor: '#1e293b'
+    });
+    return false;
+  }
+  return true;
+}
   let equipes = {};
   const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
   let dadosRelatorioAtual = null;
@@ -233,6 +268,14 @@
   });
 }
   function salvar() {
+  function salvar() {
+  const comp = document.getElementById('comp').value.trim();
+
+  // TRAVA DE SEGURANÇA: Se tiver espaço, para o código aqui.
+  if (!validarCompetencia(comp)) return;
+
+  // ... restante do seu código de salvar ...
+} 
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
     const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
