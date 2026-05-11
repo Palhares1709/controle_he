@@ -195,21 +195,24 @@ function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value.trim();
   
-  // Validação de espaço que criamos
   if (!validarCompetencia(mes)) return;
-  if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
   
-  Swal.fire({ title: 'Buscando histórico...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+  Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`, {
-    method: "GET",
-    redirect: "follow"
+  // Mudamos para POST para evitar o erro de conexão/CORS
+  fetch(urlSistemas, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "buscarRelatorio",
+      c: colab,
+      m: mes
+    })
   })
   .then(res => res.json())
   .then(r => {
     Swal.close();
-    if (r.logs.length === 0 && r.resumo.length === 0) {
-       Swal.fire('Vazio', 'Nenhum registro encontrado para esta competência.', 'info');
+    if (!r || (r.logs.length === 0 && r.resumo.length === 0)) {
+       Swal.fire('Vazio', 'Nenhum registro encontrado.', 'info');
        return;
     }
     dadosRelatorioAtual = r;
@@ -217,11 +220,9 @@ function buscarRelatorio() {
   })
   .catch(err => {
     Swal.close();
-    console.error(err);
-    Swal.fire('Erro', 'Não foi possível carregar o histórico. Verifique a conexão.', 'error');
+    Swal.fire('Erro', 'Falha ao carregar. Verifique se o Script foi publicado como "Qualquer um".', 'error');
   });
-}
-function exibirTabela(r) {
+}function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
     let html = `<div class="card p-3 shadow-sm border mt-3">
