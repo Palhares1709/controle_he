@@ -38,7 +38,6 @@
 </head>
 <body>
 
-<!-- TELA DE LOGIN -->
 <div id="loginPage">
   <div class="login-card">
     <div class="mb-4">
@@ -52,14 +51,12 @@
   </div>
 </div>
 
-<!-- CONTEÚDO DO APP -->
 <div id="app" style="display:none;">
   <div class="header shadow">
     <small class="opacity-75">Olá, seja bem-vindo!</small>
     <h5 id="nomeUsuario" class="fw-bold m-0">OPERADOR</h5>
   </div>
 
-  <!-- SEÇÃO LANÇAR -->
   <div id="sec-lancar" class="section">
     <div class="card p-3 shadow-sm">
       <label class="small fw-bold text-muted mb-1">EQUIPE</label>
@@ -76,7 +73,10 @@
       <div id="lista" class="colab-box mb-3 shadow-sm"></div>
       
       <div class="row g-2 mb-3">
-        <div class="col-6"><label class="small fw-bold text-muted">COMPETÊNCIA</label><input type="text" id="comp" class="input-custom" placeholder="ex: maio2026"></div>
+        <div class="col-6">
+            <label class="small fw-bold text-muted">COMPETÊNCIA</label>
+            <input type="text" id="comp" class="input-custom" placeholder="ex: maio2026" onclick="ajudaCompetencia()">
+        </div>
         <div class="col-6"><label class="small fw-bold text-muted">DATA DIA</label><input type="date" id="data" class="input-custom"></div>
         <div class="col-4"><label class="small fw-bold text-muted">ENTRADA</label><input type="time" id="he" class="input-custom" onchange="calc()"></div>
         <div class="col-4"><label class="small fw-bold text-muted">SAÍDA</label><input type="time" id="hs" class="input-custom" onchange="calc()"></div>
@@ -89,7 +89,6 @@
     </div>
   </div>
 
-  <!-- SEÇÃO HISTÓRICO -->
   <div id="sec-rel-filtro" class="section" style="display:none;">
     <div class="card p-3 shadow-sm">
       <label class="small fw-bold text-muted mb-1">COLABORADOR</label>
@@ -98,7 +97,7 @@
       <input type="text" id="relMes" class="input-custom mb-3" placeholder="ex: maio2026">
       <button onclick="buscarRelatorio()" class="btn-main mb-3">BUSCAR HISTÓRICO <i class="fas fa-search"></i></button>
       
-      <div id="sec-rel"></div> <!-- Onde a tabela aparece -->
+      <div id="sec-rel"></div>
     </div>
   </div>
 
@@ -109,7 +108,7 @@
 </div>
 
 <script>
-  // Pop-up que abre ao clicar no campo de Competência
+// --- FUNÇÕES DE AJUDA E VALIDAÇÃO ---
 function ajudaCompetencia() {
   Swal.fire({
     title: '<span style="font-family: \'Segoe UI\', sans-serif; font-weight: 700; color: #1e293b;">Atenção no Preenchimento</span>',
@@ -124,15 +123,12 @@ function ajudaCompetencia() {
       </div>`,
     icon: 'info',
     confirmButtonColor: '#1e293b',
-    confirmButtonText: '<span style="padding: 0 20px;">OK, ENTENDI</span>'
+    confirmButtonText: 'OK, ENTENDI'
   });
 }
 
-// Função de validação que bloqueia o salvamento se houver erro
 function validarCompetencia(texto) {
   if (!texto) return false;
-  
-  // Verifica se o usuário digitou espaço em branco
   if (texto.includes(" ")) {
     Swal.fire({
       title: 'Espaço Detectado!',
@@ -144,10 +140,14 @@ function validarCompetencia(texto) {
   }
   return true;
 }
-  let equipes = {};
-  const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
-  let dadosRelatorioAtual = null;
-  function login() {
+
+// --- VARIÁVEIS GERAIS ---
+let equipes = {};
+const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
+let dadosRelatorioAtual = null;
+
+// --- FUNÇÃO DE LOGIN ---
+function login() {
     const u = document.getElementById('u').value;
     const p = document.getElementById('p').value;
     if (!u || !p) return Swal.fire('Atenção', 'Preencha usuário e senha.', 'warning');
@@ -170,9 +170,9 @@ function validarCompetencia(texto) {
         Swal.close();
         Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
       });
-  }
+}
 
-  function init() {
+function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     fetch(`${urlSistemas}?action=getDadosEquipes`, { method: "GET", redirect: "follow" })
       .then(res => res.json())
@@ -189,16 +189,15 @@ function validarCompetencia(texto) {
           Object.values(e).flat().sort().forEach(n => sRel.add(new Option(n, n)));
         }
       });
-  }
+}
 
-  function buscarRelatorio() {
+function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value;
   if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
   
   Swal.fire({ title: 'Buscando histórico...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  // Adicionamos o redirect: "follow" para o GitHub não barrar a resposta do Google
   fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`, {
     method: "GET",
     redirect: "follow"
@@ -211,12 +210,11 @@ function validarCompetencia(texto) {
   })
   .catch(err => {
     Swal.close();
-    console.error(err);
-    Swal.fire('Erro', 'Não foi possível carregar o histórico. Verifique se a competência existe.', 'error');
+    Swal.fire('Erro', 'Não foi possível carregar o histórico.', 'error');
   });
 }
 
-  function exibirTabela(r) {
+function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
     let html = `<div class="card p-3 shadow-sm border mt-3">
@@ -239,9 +237,9 @@ function validarCompetencia(texto) {
       ${r.modo === 'todos' ? `<button onclick="baixarPDF('todos')" class="btn btn-dark btn-sm w-100">GERAL</button>` : ''}
     </div></div>`;
     div.innerHTML = html;
-  }
+}
 
-  function baixarPDF(tipo) {
+function baixarPDF(tipo) {
   const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
   Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
@@ -256,25 +254,16 @@ function validarCompetencia(texto) {
     const link = document.createElement('a');
     link.href = `data:application/pdf;base64,${base64}`;
     link.download = `Relatorio_CMR_${dadosRelatorioAtual.mes}.pdf`;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   })
-  .catch(err => {
+  .catch(() => {
     Swal.close();
-    console.error(err);
     Swal.fire('Erro', 'Falha ao processar o PDF.', 'error');
   });
 }
-  function salvar() {
-  function salvar() {
-  const comp = document.getElementById('comp').value.trim();
 
-  // TRAVA DE SEGURANÇA: Se tiver espaço, para o código aqui.
-  if (!validarCompetencia(comp)) return;
-
-  // ... restante do seu código de salvar ...
-} 
+// --- FUNÇÃO SALVAR CORRIGIDA ---
+function salvar() {
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
     const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
@@ -283,14 +272,15 @@ function validarCompetencia(texto) {
     const obs = document.getElementById('obs').value.trim();
     const tot = document.getElementById('tot').value;
 
-    // --- VALIDAÇÕES ---
+    // Trava de segurança para Competência
+    if (!validarCompetencia(comp)) return;
+
+    // Validações de campos vazios
     if (s.length === 0) return Swal.fire('Atenção', 'Selecione os colaboradores.', 'warning');
     if (!comp || !he || !hs || !obs) return Swal.fire('Atenção', 'Preencha todos os campos obrigatórios.', 'warning');
     
-    // --- TRAVA DE HORÁRIO ---
-    if (he >= hs) {
-      return Swal.fire('Horário Inválido', 'A ENTRADA deve ser menor que a SAÍDA.', 'error');
-    }
+    // Trava de horário
+    if (he >= hs) return Swal.fire('Horário Inválido', 'A ENTRADA deve ser menor que a SAÍDA.', 'error');
 
     const btn = document.getElementById('btnSalvar');
     btn.disabled = true;
@@ -307,11 +297,10 @@ function validarCompetencia(texto) {
       obs: obs 
     };
 
-    // USANDO FETCH PARA O GITHUB PAGES
     fetch(urlSistemas, {
       method: "POST",
       body: JSON.stringify(obj),
-      mode: "no-cors" // Necessário para evitar erro de CORS no Google
+      mode: "no-cors"
     })
     .then(() => {
       Swal.fire({
@@ -320,7 +309,6 @@ function validarCompetencia(texto) {
         text: 'Lançamento enviado com sucesso! ✅',
         confirmButtonColor: '#1e293b'
       }).then(() => {
-        // Limpar campos
         document.getElementById('he').value = ""; 
         document.getElementById('hs').value = ""; 
         document.getElementById('tot').value = "00:00"; 
@@ -330,23 +318,23 @@ function validarCompetencia(texto) {
         btn.innerText = "GRAVAR LANÇAMENTO ✅";
       });
     })
-    .catch(err => {
-      console.error(err);
+    .catch(() => {
       Swal.fire('Erro', 'Falha ao conectar com o servidor.', 'error');
       btn.disabled = false;
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
     });
-  }
-  function listColab() {
+}
+
+function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
     if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
     ctrl.style.display = "flex";
     div.innerHTML = equipes[eq].map(n => `<div class="mb-2"><label class="d-flex align-items-center"><input type="checkbox" name="c" value="${n}" class="form-check-input me-2"> ${n}</label></div>`).join('');
-  }
+}
 
-  function marcar(v) { document.querySelectorAll('input[name="c"]').forEach(c => c.checked = v); }
+function marcar(v) { document.querySelectorAll('input[name="c"]').forEach(c => c.checked = v); }
 
-  function calc() {
+function calc() {
     const h1 = document.getElementById('he').value, h2 = document.getElementById('hs').value;
     if (h1 && h2) {
       let d1 = new Date("2000-01-01T" + h1), d2 = new Date("2000-01-01T" + h2);
@@ -355,14 +343,14 @@ function validarCompetencia(texto) {
       let h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
       document.getElementById('tot').value = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
     }
-  }
+}
 
-  function tab(t) {
+function tab(t) {
     document.getElementById('sec-lancar').style.display = t === 'lancar' ? 'block' : 'none';
     document.getElementById('sec-rel-filtro').style.display = t === 'rel' ? 'block' : 'none';
     document.getElementById('tabL').classList.toggle('active', t === 'lancar');
     document.getElementById('tabR').classList.toggle('active', t === 'rel');
-  }
+}
 </script>
 </body>
 </html>
