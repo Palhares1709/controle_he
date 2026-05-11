@@ -248,7 +248,7 @@ function buscarRelatorio() {
     Swal.close();
     Swal.fire('Erro', 'Falha ao carregar dados. Verifique sua conexão.', 'error');
   });
-}}function exibirTabela(r) {
+function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
     let html = `<div class="card p-3 shadow-sm border mt-3">
