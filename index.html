@@ -264,24 +264,29 @@ function baixarPDF(tipo) {
 
 // --- FUNÇÃO SALVAR CORRIGIDA ---
 function salvar() {
+    // 1. Pegar os valores dos campos
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
-    const comp = document.getElementById('comp').value.trim();
+    const comp = document.getElementById('comp').value.trim(); // O trim remove espaços apenas no início e fim
     const data = document.getElementById('data').value;
     const he = document.getElementById('he').value;
     const hs = document.getElementById('hs').value;
     const obs = document.getElementById('obs').value.trim();
     const tot = document.getElementById('tot').value;
 
-    // Trava de segurança para Competência
-    if (!validarCompetencia(comp)) return;
+    // 2. TRAVA DE SEGURANÇA DA COMPETÊNCIA (VALIDAÇÃO REAL)
+    // Se a função validarCompetencia retornar false (ou seja, se tiver espaço), o 'return' para o código aqui.
+    if (!validarCompetencia(comp)) {
+        return; 
+    }
 
-    // Validações de campos vazios
+    // 3. Outras validações de campos vazios
     if (s.length === 0) return Swal.fire('Atenção', 'Selecione os colaboradores.', 'warning');
     if (!comp || !he || !hs || !obs) return Swal.fire('Atenção', 'Preencha todos os campos obrigatórios.', 'warning');
     
-    // Trava de horário
+    // 4. Trava de horário
     if (he >= hs) return Swal.fire('Horário Inválido', 'A ENTRADA deve ser menor que a SAÍDA.', 'error');
 
+    // 5. Início do processo de envio
     const btn = document.getElementById('btnSalvar');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> GRAVANDO...';
@@ -309,6 +314,7 @@ function salvar() {
         text: 'Lançamento enviado com sucesso! ✅',
         confirmButtonColor: '#1e293b'
       }).then(() => {
+        // Limpar campos após sucesso
         document.getElementById('he').value = ""; 
         document.getElementById('hs').value = ""; 
         document.getElementById('tot').value = "00:00"; 
@@ -318,13 +324,13 @@ function salvar() {
         btn.innerText = "GRAVAR LANÇAMENTO ✅";
       });
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error(err);
       Swal.fire('Erro', 'Falha ao conectar com o servidor.', 'error');
       btn.disabled = false;
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
     });
 }
-
 function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
     if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
