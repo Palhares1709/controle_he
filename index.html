@@ -251,20 +251,18 @@ function baixarPDF(tipo) {
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-    // O segredo aqui é enviar como URLSearchParams para evitar bloqueio de CORS no Google
-    const dadosEnvio = new URLSearchParams();
-    dadosEnvio.append('action', action);
-    dadosEnvio.append('dados', JSON.stringify(dadosRelatorioAtual));
-
+    // Enviamos como JSON bruto no corpo do POST para maior compatibilidade
     fetch(urlSistemas, {
         method: "POST",
-        body: dadosEnvio, // Mudança aqui: Enviando como formulário
-        mode: "cors"      // Mudança aqui: Usar cors em vez de no-cors para PDF
+        body: JSON.stringify({
+            action: action,
+            dados: dadosRelatorioAtual
+        })
     })
     .then(res => res.json())
     .then(r => {
         Swal.close();
-        if (r.base64) {
+        if (r.sucesso && r.base64) {
             const link = document.createElement('a');
             link.href = `data:application/pdf;base64,${r.base64}`;
             link.download = tipo === 'todos' ? `Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
@@ -272,15 +270,14 @@ function baixarPDF(tipo) {
             link.click();
             document.body.removeChild(link);
         } else {
-            throw new Error("PDF não gerado");
+            throw new Error(r.msg || "Erro ao processar PDF no servidor.");
         }
     })
     .catch(err => {
         Swal.close();
-        Swal.fire('Erro', 'O servidor não retornou o PDF. Verifique se a cota do Google não excedeu.', 'error');
+        Swal.fire('Erro', 'Falha ao gerar PDF. Verifique se o Script foi publicado como "Qualquer um" e tente novamente.', 'error');
     });
-}
-// --- FUNÇÃO SALVAR CORRIGIDA ---
+}// --- FUNÇÃO SALVAR CORRIGIDA ---
 function salvar() {
     // 1. Pegar os valores dos campos
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
