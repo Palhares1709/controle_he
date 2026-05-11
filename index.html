@@ -193,7 +193,10 @@ function init() {
 
 function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
-  const mes = document.getElementById('relMes').value;
+  const mes = document.getElementById('relMes').value.trim();
+  
+  // Validação de espaço que criamos
+  if (!validarCompetencia(mes)) return;
   if (!mes) return Swal.fire('Atenção', 'Digite a competência (ex: maio2026)', 'warning');
   
   Swal.fire({ title: 'Buscando histórico...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
@@ -205,15 +208,19 @@ function buscarRelatorio() {
   .then(res => res.json())
   .then(r => {
     Swal.close();
+    if (r.logs.length === 0 && r.resumo.length === 0) {
+       Swal.fire('Vazio', 'Nenhum registro encontrado para esta competência.', 'info');
+       return;
+    }
     dadosRelatorioAtual = r;
     exibirTabela(r);
   })
   .catch(err => {
     Swal.close();
-    Swal.fire('Erro', 'Não foi possível carregar o histórico.', 'error');
+    console.error(err);
+    Swal.fire('Erro', 'Não foi possível carregar o histórico. Verifique a conexão.', 'error');
   });
 }
-
 function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
@@ -253,12 +260,14 @@ function baixarPDF(tipo) {
     Swal.close();
     const link = document.createElement('a');
     link.href = `data:application/pdf;base64,${base64}`;
-    link.download = `Relatorio_CMR_${dadosRelatorioAtual.mes}.pdf`;
+    link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}_${dadosRelatorioAtual.mes}.pdf`;
+    document.body.appendChild(link); // Necessário para alguns navegadores
     link.click();
+    document.body.removeChild(link);
   })
-  .catch(() => {
+  .catch(err => {
     Swal.close();
-    Swal.fire('Erro', 'Falha ao processar o PDF.', 'error');
+    Swal.fire('Erro', 'Falha ao processar o PDF no servidor.', 'error');
   });
 }
 
