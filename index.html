@@ -247,30 +247,38 @@ function exibirTabela(r) {
 }
 
 function baixarPDF(tipo) {
-  const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
-  Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+    const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-  fetch(urlSistemas, {
-    method: "POST",
-    body: JSON.stringify({ action: action, ...dadosRelatorioAtual }),
-    redirect: "follow"
-  })
-  .then(res => res.json())
-  .then(base64 => {
-    Swal.close();
-    const link = document.createElement('a');
-    link.href = `data:application/pdf;base64,${base64}`;
-    link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}_${dadosRelatorioAtual.mes}.pdf`;
-    document.body.appendChild(link); // Necessário para alguns navegadores
-    link.click();
-    document.body.removeChild(link);
-  })
-  .catch(err => {
-    Swal.close();
-    Swal.fire('Erro', 'Falha ao processar o PDF no servidor.', 'error');
-  });
+    // O segredo aqui é enviar como URLSearchParams para evitar bloqueio de CORS no Google
+    const dadosEnvio = new URLSearchParams();
+    dadosEnvio.append('action', action);
+    dadosEnvio.append('dados', JSON.stringify(dadosRelatorioAtual));
+
+    fetch(urlSistemas, {
+        method: "POST",
+        body: dadosEnvio, // Mudança aqui: Enviando como formulário
+        mode: "cors"      // Mudança aqui: Usar cors em vez de no-cors para PDF
+    })
+    .then(res => res.json())
+    .then(r => {
+        Swal.close();
+        if (r.base64) {
+            const link = document.createElement('a');
+            link.href = `data:application/pdf;base64,${r.base64}`;
+            link.download = tipo === 'todos' ? `Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            throw new Error("PDF não gerado");
+        }
+    })
+    .catch(err => {
+        Swal.close();
+        Swal.fire('Erro', 'O servidor não retornou o PDF. Verifique se a cota do Google não excedeu.', 'error');
+    });
 }
-
 // --- FUNÇÃO SALVAR CORRIGIDA ---
 function salvar() {
     // 1. Pegar os valores dos campos
