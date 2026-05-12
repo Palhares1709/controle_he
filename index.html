@@ -309,30 +309,34 @@ function baixarPDF(tipo) {
     });
 }// --- FUNÇÃO SALVAR CORRIGIDA ---
 function salvar() {
-    // 1. Pegar os valores dos campos
+    // 1. Captura os colaboradores selecionados (Nome e Matrícula)
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => {
-    return { nome: i.value, matricula: i.getAttribute('data-mat')
-    const comp = document.getElementById('comp').value.trim(); // O trim remove espaços apenas no início e fim
+        return { 
+            nome: i.value, 
+            matricula: i.getAttribute('data-mat') 
+        };
+    });
+
+    const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
     const he = document.getElementById('he').value;
     const hs = document.getElementById('hs').value;
     const obs = document.getElementById('obs').value.trim();
     const tot = document.getElementById('tot').value;
 
-    // 2. TRAVA DE SEGURANÇA DA COMPETÊNCIA (VALIDAÇÃO REAL)
-    // Se a função validarCompetencia retornar false (ou seja, se tiver espaço), o 'return' para o código aqui.
+    // 2. Validação da Competência (Sem espaços)
     if (!validarCompetencia(comp)) {
         return; 
     }
 
-    // 3. Outras validações de campos vazios
+    // 3. Validações de campos obrigatórios
     if (s.length === 0) return Swal.fire('Atenção', 'Selecione os colaboradores.', 'warning');
     if (!comp || !he || !hs || !obs) return Swal.fire('Atenção', 'Preencha todos os campos obrigatórios.', 'warning');
     
-    // 4. Trava de horário
+    // 4. Trava de segurança de horário
     if (he >= hs) return Swal.fire('Horário Inválido', 'A ENTRADA deve ser menor que a SAÍDA.', 'error');
 
-    // 5. Início do processo de envio
+    // 5. Interface de gravação
     const btn = document.getElementById('btnSalvar');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> GRAVANDO...';
@@ -376,8 +380,7 @@ function salvar() {
       btn.disabled = false;
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
     });
-}
-function listColab() {
+}function listColab() {
     const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
     if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
     ctrl.style.display = "flex";
