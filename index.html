@@ -183,14 +183,23 @@ function init() {
           s1.innerHTML = '<option value="">Selecione...</option>';
           Object.keys(e).sort().forEach(k => s1.add(new Option(k, k)));
         }
+
         const sRel = document.getElementById('relColab');
         if (sRel) {
           sRel.innerHTML = '<option value="todos">GERAL (TODOS)</option>';
-          Object.values(e).flat().sort().forEach(n => sRel.add(new Option(n, n)));
+          
+          // AJUSTE AQUI: Pegamos a lista de objetos e extraímos apenas o nome para o Select
+          const todosColabs = Object.values(e).flat();
+          
+          // Ordenamos e removemos duplicatas de nomes
+          const nomesUnicos = [...new Set(todosColabs.map(c => c.nome))].sort();
+          
+          nomesUnicos.forEach(nome => {
+            sRel.add(new Option(nome.toUpperCase(), nome));
+          });
         }
       });
 }
-
 function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value.trim();
