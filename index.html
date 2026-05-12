@@ -380,17 +380,29 @@ function salvar() {
       btn.disabled = false;
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
     });
-}function listColab() {
-    const eq = document.getElementById('eqSel').value, div = document.getElementById('lista'), ctrl = document.getElementById('ctrlLote');
-    if (!eq) { div.innerHTML = ""; ctrl.style.display = "none"; return; }
+}
+  function listColab() {
+    const eq = document.getElementById('eqSel').value;
+    const div = document.getElementById('lista');
+    const ctrl = document.getElementById('ctrlLote');
+
+    if (!eq) { 
+        div.innerHTML = ""; 
+        ctrl.style.display = "none"; 
+        return; 
+    }
+
     ctrl.style.display = "flex";
+    
+    // Mapeia os colaboradores da equipe selecionada inserindo a matrícula no data-attribute
     div.innerHTML = equipes[eq].map(c => `
-  <div class="mb-2">
-    <label class="d-flex align-items-center">
-      <input type="checkbox" name="c" value="${c.nome}" data-mat="${c.matricula}" class="form-check-input me-2"> 
-      ${c.nome} <small class="text-muted ms-2">(${c.matricula})</small>
-    </label>
-  </div>`).join('');
+      <div class="mb-2">
+        <label class="d-flex align-items-center">
+          <input type="checkbox" name="c" value="${c.nome}" data-mat="${c.matricula}" class="form-check-input me-2"> 
+          ${c.nome} <small class="text-muted ms-2">(${c.matricula})</small>
+        </label>
+      </div>`).join('');
+}
 
 function marcar(v) { document.querySelectorAll('input[name="c"]').forEach(c => c.checked = v); }
 
