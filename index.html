@@ -310,7 +310,8 @@ function baixarPDF(tipo) {
 }// --- FUNÇÃO SALVAR CORRIGIDA ---
 function salvar() {
     // 1. Pegar os valores dos campos
-    const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => i.value);
+    const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => {
+    return { nome: i.value, matricula: i.getAttribute('data-mat')
     const comp = document.getElementById('comp').value.trim(); // O trim remove espaços apenas no início e fim
     const data = document.getElementById('data').value;
     const he = document.getElementById('he').value;
