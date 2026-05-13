@@ -160,28 +160,39 @@ let dadosRelatorioAtual = null;
 function login() {
     const u = document.getElementById('u').value;
     const p = document.getElementById('p').value;
+    const btn = document.getElementById('btnEntrar');
+    const txt = document.getElementById('txtBtn');
+    const loader = document.getElementById('loaderBtn');
+    const barra = document.getElementById('progressoLogin');
+
     if (!u || !p) return Swal.fire('Atenção', 'Preencha usuário e senha.', 'warning');
-    Swal.fire({ title: 'Autenticando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+    // EFEITO CHIQUE: Ativa animações
+    btn.disabled = true;
+    txt.innerText = "AUTENTICANDO...";
+    loader.style.display = "inline-block";
+    barra.style.display = "flex";
 
     fetch(`${urlSistemas}?action=verificarLogin&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`)
       .then(res => res.json())
       .then(r => {
-        Swal.close();
         if (r.sucesso) {
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('app').style.display = 'block';
-          document.getElementById('nomeUsuario').innerText = r.nome;
-          init();
+          // Pequeno delay para o usuário ver a barra brilhar antes de entrar
+          setTimeout(() => {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('nomeUsuario').innerText = r.nome;
+            init();
+          }, 600);
         } else {
+          resetLogin();
           Swal.fire('Acesso Negado', r.msg, 'error');
         }
       })
       .catch(() => {
-        Swal.close();
+        resetLogin();
         Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
       });
-}
-
 function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
     fetch(`${urlSistemas}?action=getDadosEquipes`, { method: "GET", redirect: "follow" })
