@@ -239,21 +239,42 @@ function exibirTabela(r) {
 }
 
 function baixarPDF(tipo) {
+    // Define qual função do Código.gs será chamada
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
-    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    fetch(urlSistemas, { method: "POST", body: JSON.stringify({ action: action, dados: dadosRelatorioAtual }) })
+    
+    Swal.fire({ 
+        title: 'Gerando Relatório Geral...', 
+        html: 'Relacionando pessoal e acumulados',
+        allowOutsideClick: false, 
+        didOpen: () => { Swal.showLoading() } 
+    });
+
+    fetch(urlSistemas, {
+        method: "POST",
+        body: JSON.stringify({
+            action: action, // Aqui ele escolhe entre individual ou todos
+            dados: dadosRelatorioAtual
+        })
+    })
     .then(res => res.json())
     .then(r => {
         Swal.close();
         if (r.sucesso && r.base64) {
             const link = document.createElement('a');
             link.href = `data:application/pdf;base64,${r.base64}`;
-            link.download = `Relatorio.pdf`;
+            link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
+        } else {
+            throw new Error(r.msg || "Erro ao processar PDF.");
         }
-    }).catch(() => { Swal.close(); Swal.fire('Erro', 'Falha ao gerar PDF.', 'error'); });
+    })
+    .catch(err => {
+        Swal.close();
+        Swal.fire('Erro', 'Falha ao gerar PDF. Verifique se a WebApp está publicada.', 'error');
+    });
 }
-
 function salvar() {
     const s = Array.from(document.querySelectorAll('input[name="c"]:checked')).map(i => ({ nome: i.value, matricula: i.getAttribute('data-mat') }));
     const comp = document.getElementById('comp').value.trim();
