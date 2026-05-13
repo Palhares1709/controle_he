@@ -192,6 +192,15 @@ function login() {
       .catch(() => {
         resetLogin();
         Swal.fire('Erro', 'Falha na conexão com o servidor CMR.', 'error');
+// >>> SALVE AQUI (ANTES DE FECHAR A FUNÇÃO LOGIN) <<<
+    function resetLogin() {
+        btn.disabled = false;
+        txt.innerText = "ACESSAR SISTEMA";
+        loader.style.display = "none";
+        barra.style.display = "none";
+    }
+} // Esta é a chave que fecha a function login()
+       
       });
 function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
