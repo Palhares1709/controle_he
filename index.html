@@ -260,7 +260,7 @@ function baixarPDF(tipo) {
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
     
     Swal.fire({ 
-        title: 'Gerando Relatório Geral...', 
+        title: 'Gerando PDF...', 
         html: 'Relacionando pessoal e acumulados',
         allowOutsideClick: false, 
         didOpen: () => { Swal.showLoading() } 
