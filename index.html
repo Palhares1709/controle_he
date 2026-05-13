@@ -40,18 +40,28 @@
 
 <div id="loginPage">
   <div class="login-card">
-    <div class="mb-4">
-      <i class="fas fa-user-shield fa-3x mb-3" style="color:var(--primary)"></i>
-      <h4 class="fw-bold" style="color:var(--primary); letter-spacing: -1px;">LOGIN</h4>
-      <p class="text-muted small">Controle de Horas Extras</p>
-    </div>
-    <input type="text" id="u" class="form-control input-custom mb-3" placeholder="Usuário" autocomplete="off">
-    <input type="password" id="p" class="form-control input-custom mb-4" placeholder="Senha">
-    <button onclick="login()" class="btn-main shadow-lg">ACESSAR SISTEMA</button>
+  <div class="mb-4">
+    <i class="fas fa-user-shield fa-3x mb-3" style="color:var(--primary)"></i>
+    <h4 class="fw-bold" style="color:var(--primary); letter-spacing: -1px;">LOGIN</h4>
+    <p class="text-muted small">Controle de Horas Extras</p>
+  </div>
+  
+  <input type="text" id="u" class="form-control input-custom mb-3" placeholder="Usuário" autocomplete="off">
+  <input type="password" id="p" class="form-control input-custom mb-4" placeholder="Senha">
+  
+  <!-- BOTÃO COM SPINNER E BARRA -->
+  <button onclick="login()" id="btnEntrar" class="btn-main shadow-lg d-flex align-items-center justify-content-center gap-2">
+    <span id="txtBtn">ACESSAR SISTEMA</span>
+    <div id="loaderBtn" class="spinner-border spinner-border-sm" role="status" style="display:none;"></div>
+  </button>
+
+  <!-- BARRA DE PROGRESSO -->
+  <div class="progress mt-4" style="height: 6px; display:none;" id="progressoLogin">
+    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
   </div>
 </div>
-
-<div id="app" style="display:none;">
+  
+ <div id="app" style="display:none;">
   <div class="header shadow">
     <small class="opacity-75">Olá, seja bem-vindo!</small>
     <h5 id="nomeUsuario" class="fw-bold m-0">OPERADOR</h5>
