@@ -222,22 +222,39 @@ function buscarRelatorio() {
 
 function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
+    if (!div) return;
+
     let html = `<div class="card p-3 shadow-sm border mt-3">
-      <h6 class="fw-bold text-primary">${r.colab === 'todos' ? 'RESUMO GERAL' : r.colab.toUpperCase()}</h6>
-      <p class="small text-muted">Total: <b>${r.total}</b></p>`;
-    if (r.modo === 'individual') {
-      html += `<table class="table table-sm small"><thead><tr><th>Data</th><th>Total</th></tr></thead><tbody>`;
-      r.logs.forEach(l => html += `<tr><td>${l.data}</td><td>${l.total}</td></tr>`);
-      html += `</tbody></table>`;
-    } else {
+      <h6 class="fw-bold text-primary d-flex align-items-center">
+        <i class="fas fa-file-invoice me-2"></i> 
+        ${r.modo === 'todos' ? 'RESUMO GERAL DA EQUIPE' : r.colab.toUpperCase()}
+      </h6>
+      <p class="small text-muted mb-3">Total: <b>${r.total}</b></p>`;
+
+    if (r.modo === 'todos') {
+      // Lista de resumo para todos
       html += `<ul class="list-group list-group-flush small">`;
-      r.resumo.forEach(i => html += `<li class="list-group-item d-flex justify-content-between"><span>${i.nome}</span><b>${i.total}</b></li>`);
+      r.resumo.forEach(i => { 
+        html += `<li class="list-group-item d-flex justify-content-between"><span>${i.nome}</span><b>${i.total}</b></li>`; 
+      });
       html += `</ul>`;
+    } else {
+      // Tabela de logs para individual
+      html += `<div class="table-responsive"><table class="table table-sm small">
+        <thead><tr><th>Data</th><th>Total</th></tr></thead><tbody>`;
+      r.logs.forEach(l => { html += `<tr><td>${l.data}</td><td>${l.total}</td></tr>`; });
+      html += `</tbody></table></div>`;
     }
-    html += `<div class="d-flex gap-2 mt-3"><button onclick="baixarPDF('individual')" class="btn btn-danger btn-sm w-100">PDF</button></div></div>`;
+
+    // AQUI ESTÁ O SEGREDO: O botão precisa saber se envia 'todos' ou 'individual'
+    html += `<div class="d-flex gap-2 mt-3">
+      <button onclick="baixarPDF('${r.modo === 'todos' ? 'todos' : 'individual'}')" class="btn btn-danger btn-sm w-100">
+        <i class="fas fa-file-pdf me-2"></i>GERAR PDF
+      </button>
+    </div></div>`;
+
     div.innerHTML = html;
 }
-
 function baixarPDF(tipo) {
     // Define qual função do Código.gs será chamada
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
