@@ -108,15 +108,15 @@
 </div>
 
 <script>
-// --- VARIÁVEIS GERAIS ---
+// --- CONFIGURAÇÃO ---
 let equipes = {};
 const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
 let dadosRelatorioAtual = null;
 
-// --- FUNÇÃO DE LOGIN ---
+// --- LOGIN ---
 function login() {
-    const u = document.getElementById('u').value;
-    const p = document.getElementById('p').value;
+    const u = document.getElementById('u').value.trim();
+    const p = document.getElementById('p').value.trim();
     const btn = document.getElementById('btnEntrar');
     const txt = document.getElementById('txtBtn');
     const loader = document.getElementById('loaderBtn');
@@ -136,12 +136,12 @@ function login() {
           setTimeout(() => {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('app').style.display = 'block';
-            document.getElementById('nomeUsuario').innerText = r.nome;
+            document.getElementById('nomeUsuario').innerText = r.nome.toUpperCase();
             init();
           }, 600);
         } else {
           resetLogin();
-          Swal.fire('Acesso Negado', r.msg, 'error');
+          Swal.fire('Acesso Negado', r.msg || 'Usuário ou senha incorretos.', 'error');
         }
       })
       .catch((err) => {
@@ -155,13 +155,15 @@ function login() {
         txt.innerText = "ACESSAR SISTEMA";
         loader.style.display = "none";
         barra.style.display = "none";
+        document.getElementById('p').value = "";
     }
 }
 
-// --- INICIALIZAÇÃO ---
+// --- CARREGAR DADOS INICIAIS VIA GET (ANTI-CORS DO GITHUB) ---
 function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
-    fetch(`${urlSistemas}?action=getDadosEquipes`, { method: "GET", redirect: "follow" })
+    
+    fetch(`${urlSistemas}?action=getDadosEquipes`)
       .then(res => res.json())
       .then(e => {
         equipes = e;
@@ -173,14 +175,20 @@ function init() {
         const sRel = document.getElementById('relColab');
         if (sRel) {
           sRel.innerHTML = '<option value="todos">GERAL (TODOS)</option>';
-          const todosColabs = Object.values(e).flat();
-          const nomesUnicos = [...new Set(todosColabs.map(c => c.nome))].sort();
+          let listaProvisoria = [];
+          Object.keys(e).forEach(k => {
+            e[k].forEach(c => { listaProvisoria.push(c.nome); });
+          });
+          const nomesUnicos = [...new Set(listaProvisoria)].sort();
           nomesUnicos.forEach(nome => sRel.add(new Option(nome.toUpperCase(), nome)));
         }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire('Erro', 'Falha ao sincronizar as equipes. Verifique a publicação.', 'error');
       });
 }
 
-// --- FUNÇÕES DE AJUDA E VALIDAÇÃO ---
 function ajudaCompetencia() {
   Swal.fire({
     title: 'Atenção...',
@@ -201,6 +209,7 @@ function validarCompetencia(texto) {
   return true;
 }
 
+// --- BUSCAR RELATÓRIO VIA GET ---
 function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value.trim();
@@ -209,7 +218,6 @@ function buscarRelatorio() {
   
   Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  // Chamada via GET compatível com GitHub Pages
   fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
   .then(res => res.json())
   .then(r => {
@@ -223,9 +231,10 @@ function buscarRelatorio() {
   .catch((err) => { 
     Swal.close(); 
     console.error(err);
-    Swal.fire('Erro', 'Falha ao carregar dados do servidor. Verifique a implantação.', 'error'); 
+    Swal.fire('Erro', 'Falha ao carregar dados do histórico.', 'error'); 
   });
 }
+
 function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
@@ -235,49 +244,52 @@ function exibirTabela(r) {
         <i class="fas fa-file-invoice me-2"></i> 
         ${r.modo === 'todos' ? 'RESUMO GERAL DA EQUIPE' : r.colab.toUpperCase()}
       </h6>
-      <p class="small text-muted mb-3">Total: <b>${r.total}</b></p>`;
+      <p class="small text-muted mb-3">Total do Período: <b>${r.total} horas</b></p>`;
 
     if (r.modo === 'todos') {
-      // Lista de resumo para todos
       html += `<ul class="list-group list-group-flush small">`;
       r.resumo.forEach(i => { 
-        html += `<li class="list-group-item d-flex justify-content-between"><span>${i.nome}</span><b>${i.total}</b></li>`; 
+        html += `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${i.nome}</span><b>${i.total}</b></li>`; 
       });
       html += `</ul>`;
     } else {
-      // Tabela de logs para individual
-      html += `<div class="table-responsive"><table class="table table-sm small">
-        <thead><tr><th>Data</th><th>Total</th></tr></thead><tbody>`;
-      r.logs.forEach(l => { html += `<tr><td>${l.data}</td><td>${l.total}</td></tr>`; });
+      html += `<div class="table-responsive"><table class="table table-sm table-hover small">
+        <thead><tr><th>Data</th><th>Carga</th><th>Atividade / Justificativa</th></tr></thead><tbody>`;
+      r.logs.forEach(l => { 
+        html += `<tr><td>${l.data}</td><td><span class="badge bg-secondary">${l.total}</span></td><td><small>${l.obs || '-'}</small></td></tr>`; 
+      });
       html += `</tbody></table></div>`;
     }
 
-    // AQUI ESTÁ O SEGREDO: O botão precisa saber se envia 'todos' ou 'individual'
     html += `<div class="d-flex gap-2 mt-3">
-      <button onclick="baixarPDF('${r.modo === 'todos' ? 'todos' : 'individual'}')" class="btn btn-danger btn-sm w-100">
-        <i class="fas fa-file-pdf me-2"></i>GERAR PDF
+      <button onclick="baixarPDF('${r.modo === 'todos' ? 'todos' : 'individual'}')" class="btn btn-danger btn-sm w-100 py-2 fw-bold">
+        <i class="fas fa-file-pdf me-2"></i>GERAR RELATÓRIO PDF
       </button>
     </div></div>`;
 
     div.innerHTML = html;
 }
+
+// --- GERAR PDF VIA POST (ÚNICA PERMITIDA PELO GOOGLE PARA ARQUIVOS) ---
 function baixarPDF(tipo) {
-    // Define qual função do Código.gs será chamada
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
     
     Swal.fire({ 
         title: 'Gerando PDF...', 
-        html: 'Relacionando pessoal e acumulados',
+        html: 'Preparando documento operacional da CMR...',
         allowOutsideClick: false, 
         didOpen: () => { Swal.showLoading() } 
     });
 
+    const objPayload = {
+        action: action,
+        dados: dadosRelatorioAtual
+    };
+
     fetch(urlSistemas, {
         method: "POST",
-        body: JSON.stringify({
-            action: action, // Aqui ele escolhe entre individual ou todos
-            dados: dadosRelatorioAtual
-        })
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "payload=" + encodeURIComponent(JSON.stringify(objPayload))
     })
     .then(res => res.json())
     .then(r => {
@@ -285,19 +297,22 @@ function baixarPDF(tipo) {
         if (r.sucesso && r.base64) {
             const link = document.createElement('a');
             link.href = `data:application/pdf;base64,${r.base64}`;
-            link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab}.pdf`;
+            link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab.replace(/ /g, "_")}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         } else {
-            throw new Error(r.msg || "Erro ao processar PDF.");
+            throw new Error(r.msg || "Erro ao gerar arquivo no servidor.");
         }
     })
     .catch(err => {
         Swal.close();
-        Swal.fire('Erro', 'Falha ao gerar PDF. Verifique se a WebApp está publicada.', 'error');
+        console.error(err);
+        Swal.fire('Erro', 'Falha ao processar arquivo PDF.', 'error');
     });
 }
+
+// --- SALVAR VIA GET ---
 function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
     const comp = document.getElementById('comp').value.trim();
@@ -331,7 +346,6 @@ function salvar() {
       obs: obs 
     };
 
-    // Envio estruturado via GET para passar direto pelas travas de segurança do GitHub
     fetch(`${urlSistemas}?action=salvarHorasLote&payload=${encodeURIComponent(JSON.stringify(objPayload))}`)
     .then(res => res.json())
     .then(r => {
@@ -358,24 +372,31 @@ function salvar() {
       btn.innerText = "GRAVAR LANÇAMENTO ✅";
     });
 }
+
 function listColab() {
     const eq = document.getElementById('eqSel').value;
     const div = document.getElementById('lista');
     if (!eq) { div.innerHTML = ""; document.getElementById('ctrlLote').style.display = "none"; return; }
     document.getElementById('ctrlLote').style.display = "flex";
-    div.innerHTML = equipes[eq].map(c => `<div class="mb-2"><label class="d-flex align-items-center"><input type="checkbox" name="c" value="${c.nome}" data-mat="${c.matricula}" class="form-check-input me-2">${c.nome} <small>(${c.matricula})</small></label></div>`).join('');
+    div.innerHTML = equipes[eq].map(c => `<div class="mb-2"><label class="d-flex align-items-center"><input type="checkbox" name="c" value="${c.nome}" data-mat="${c.matricula}" class="form-check-input me-2">${c.nome} <small class="text-muted ms-1">(${c.matricula})</small></label></div>`).join('');
 }
 
 function marcar(v) { document.querySelectorAll('input[name="c"]').forEach(c => c.checked = v); }
 
 function calc() {
     const h1 = document.getElementById('he').value, h2 = document.getElementById('hs').value;
+    const campoTot = document.getElementById('tot');
     if (h1 && h2) {
-      let d1 = new Date("2000-01-01T" + h1), d2 = new Date("2000-01-01T" + h2);
-      if (d2 < d1) d2.setDate(d2.getDate() + 1);
-      let diff = d2 - d1;
-      let h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
-      document.getElementById('tot').value = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
+      if (h1 >= h2) {
+        campoTot.value = "00:00";
+        campoTot.style.color = "red";
+      } else {
+        let d1 = new Date("2000-01-01T" + h1), d2 = new Date("2000-01-01T" + h2);
+        let diff = d2 - d1;
+        let h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+        campoTot.value = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
+        campoTot.style.color = "#1e293b";
+      }
     }
 }
 
@@ -384,6 +405,7 @@ function tab(t) {
     document.getElementById('sec-rel-filtro').style.display = t === 'rel' ? 'block' : 'none';
     document.getElementById('tabL').classList.toggle('active', t === 'lancar');
     document.getElementById('tabR').classList.toggle('active', t === 'rel');
+    if(t === 'rel') document.getElementById('sec-rel').innerHTML = "";
 }
 </script>
 </body>
