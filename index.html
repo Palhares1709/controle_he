@@ -108,12 +108,12 @@
 </div>
 
 <script>
-// --- CONFIGURAÇÃO ---
+// --- VARIÁVEIS GERAIS ---
 let equipes = {};
 const urlSistemas = "https://script.google.com/macros/s/AKfycbz5ayFREdvcm72hRuKPSLXXNCzvSFS_nHB3r4CLjyhMfZkSDAiBgvs8UCRQa9IxQGnB7w/exec";
 let dadosRelatorioAtual = null;
 
-// --- LOGIN ---
+// --- FUNÇÃO DE LOGIN ---
 function login() {
     const u = document.getElementById('u').value.trim();
     const p = document.getElementById('p').value.trim();
@@ -159,10 +159,9 @@ function login() {
     }
 }
 
-// --- CARREGAR DADOS INICIAIS VIA GET (ANTI-CORS DO GITHUB) ---
+// --- INICIALIZAÇÃO ---
 function init() {
     document.getElementById('data').value = new Date().toISOString().split('T')[0];
-    
     fetch(`${urlSistemas}?action=getDadosEquipes`)
       .then(res => res.json())
       .then(e => {
@@ -182,13 +181,10 @@ function init() {
           const nomesUnicos = [...new Set(listaProvisoria)].sort();
           nomesUnicos.forEach(nome => sRel.add(new Option(nome.toUpperCase(), nome)));
         }
-      })
-      .catch(err => {
-        console.error(err);
-        Swal.fire('Erro', 'Falha ao sincronizar as equipes. Verifique a publicação.', 'error');
-      });
+      }).catch(err => console.error("Erro ao carregar equipes:", err));
 }
 
+// --- FUNÇÕES DE AJUDA E VALIDAÇÃO ---
 function ajudaCompetencia() {
   Swal.fire({
     title: 'Atenção...',
@@ -209,7 +205,7 @@ function validarCompetencia(texto) {
   return true;
 }
 
-// --- BUSCAR RELATÓRIO VIA GET ---
+// --- BUSCAR HISTÓRICO CORRIGIDO PARA GET (ANTI-CORS DO GITHUB) ---
 function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value.trim();
@@ -218,6 +214,7 @@ function buscarRelatorio() {
   
   Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+  // Convertido para chamada limpa via GET compatível com GitHub
   fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
   .then(res => res.json())
   .then(r => {
@@ -270,7 +267,7 @@ function exibirTabela(r) {
     div.innerHTML = html;
 }
 
-// --- GERAR PDF VIA POST (ÚNICA PERMITIDA PELO GOOGLE PARA ARQUIVOS) ---
+// --- GERAR PDF CORRIGIDO PARA GET ---
 function baixarPDF(tipo) {
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
     
@@ -281,7 +278,7 @@ function baixarPDF(tipo) {
         didOpen: () => { Swal.showLoading() } 
     });
 
-    // Envia os dados atuais do relatório encapsulados via GET para evitar o bloqueio do GitHub
+    // Encapsula e envia a estrutura do relatório via GET sem barreiras de CORS
     fetch(`${urlSistemas}?action=${action}&payload=${encodeURIComponent(JSON.stringify(dadosRelatorioAtual))}`)
     .then(res => res.json())
     .then(r => {
@@ -300,10 +297,11 @@ function baixarPDF(tipo) {
     .catch(err => {
         Swal.close();
         console.error(err);
-        Swal.fire('Erro', 'Falha ao processar arquivo PDF. Certifique-se de que a WebApp está atualizada.', 'error');
+        Swal.fire('Erro', 'Falha ao processar arquivo PDF.', 'error');
     });
 }
-// --- SALVAR VIA GET ---
+
+// --- LANÇAR HORAS EM LOTE CORRIGIDO PARA GET ---
 function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
     const comp = document.getElementById('comp').value.trim();
@@ -337,6 +335,7 @@ function salvar() {
       obs: obs 
     };
 
+    // Despacha em formato GET estruturado, transparente para o GitHub Pages
     fetch(`${urlSistemas}?action=salvarHorasLote&payload=${encodeURIComponent(JSON.stringify(objPayload))}`)
     .then(res => res.json())
     .then(r => {
