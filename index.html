@@ -281,16 +281,8 @@ function baixarPDF(tipo) {
         didOpen: () => { Swal.showLoading() } 
     });
 
-    const objPayload = {
-        action: action,
-        dados: dadosRelatorioAtual
-    };
-
-    fetch(urlSistemas, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "payload=" + encodeURIComponent(JSON.stringify(objPayload))
-    })
+    // Envia os dados atuais do relatório encapsulados via GET para evitar o bloqueio do GitHub
+    fetch(`${urlSistemas}?action=${action}&payload=${encodeURIComponent(JSON.stringify(dadosRelatorioAtual))}`)
     .then(res => res.json())
     .then(r => {
         Swal.close();
@@ -308,10 +300,9 @@ function baixarPDF(tipo) {
     .catch(err => {
         Swal.close();
         console.error(err);
-        Swal.fire('Erro', 'Falha ao processar arquivo PDF.', 'error');
+        Swal.fire('Erro', 'Falha ao processar arquivo PDF. Certifique-se de que a WebApp está atualizada.', 'error');
     });
 }
-
 // --- SALVAR VIA GET ---
 function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
