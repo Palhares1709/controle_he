@@ -264,33 +264,39 @@ function exibirTabela(r) {
 // --- GERAR PDF CORRIGIDO PARA GET ---
 // A função de PDF também utiliza POST para enviar os dados sem limite
 function baixarPDF(tipo) {
-  const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
-  
-  Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
+    
+    Swal.fire({ 
+        title: 'Gerando PDF...', 
+        html: 'Processando...',
+        allowOutsideClick: false, 
+        didOpen: () => { Swal.showLoading() } 
+    });
 
-  fetch(urlSistemas, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: action, dados: dadosRelatorioAtual })
-  })
-  .then(res => res.json())
-  .then(r => {
-    Swal.close();
-    if (r.sucesso && r.base64) {
-      const link = document.createElement('a');
-      link.href = `data:application/pdf;base64,${r.base64}`;
-      link.download = `Relatorio_${dadosRelatorioAtual.mes}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      Swal.fire('Erro', 'Falha ao processar PDF.', 'error');
-    }
-  })
-  .catch(err => {
-    Swal.fire('Erro', 'Erro de conexão.', 'error');
-  });
-}function salvar() {
+    // Enviamos o JSON como um parâmetro de URL codificado
+    const payloadUrl = encodeURIComponent(JSON.stringify(dadosRelatorioAtual));
+    const url = `${urlSistemas}?action=${action}&payload=${payloadUrl}`;
+
+    fetch(url)
+    .then(res => res.json())
+    .then(r => {
+        Swal.close();
+        if (r.sucesso && r.base64) {
+            const link = document.createElement('a');
+            link.href = `data:application/pdf;base64,${r.base64}`;
+            link.download = `Relatorio_${dadosRelatorioAtual.mes}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            Swal.fire('Erro', r.msg || 'Falha ao gerar PDF.', 'error');
+        }
+    })
+    .catch(err => {
+        Swal.close();
+        Swal.fire('Erro', 'Erro na conexão: ' + err.message, 'error');
+    });
+}  function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
     const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
