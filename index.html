@@ -214,22 +214,18 @@ function buscarRelatorio() {
   Swal.fire({ title: 'Buscando dados...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   fetch(urlSistemas, {
-  method: "POST", // Deve ser POST
-  mode: "cors",   // Importante: explicitamente permitir cors
+  method: "POST",
+  mode: "no-cors", // Tente esta alteração temporária
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ action: "buscarRelatorio", c: colab, m: mes })
 })
-  .then(res => res.json())
-  .then(r => {
-    Swal.close();
-    if (r.sucesso === false) throw new Error(r.msg);
-    dadosRelatorioAtual = r;
-    exibirTabela(r);
-  })
-  .catch(err => {
-    Swal.fire('Erro', 'Falha ao carregar dados do histórico: ' + err.message, 'error');
-  });
-}
+.then(() => {
+  console.log("Requisição enviada com sucesso (no-cors)");
+  Swal.fire('Teste', 'Requisição enviada!', 'info');
+})
+.catch(err => {
+  console.error("Erro no teste:", err);
+});
 function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
