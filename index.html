@@ -273,34 +273,39 @@ function baixarPDF(tipo) {
     
     Swal.fire({ 
         title: 'Gerando PDF...', 
-        html: 'Preparando documento operacional da CMR...',
+        html: 'Processando dados da CMR...',
         allowOutsideClick: false, 
         didOpen: () => { Swal.showLoading() } 
     });
 
-    // Encapsula e envia a estrutura do relatório via GET sem barreiras de CORS
-    fetch(`${urlSistemas}?action=${action}&payload=${encodeURIComponent(JSON.stringify(dadosRelatorioAtual))}`)
+    // Usamos um POST disfarçado ou otimizamos a chamada para evitar erro 414
+    // Se ainda falhar, o ideal é reativar o doPost no Apps Script para esta função específica
+    fetch(urlSistemas, {
+        method: "POST",
+        mode: "no-cors", // Tente esta opção se o CORS bloquear
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "action=" + action + "&payload=" + encodeURIComponent(JSON.stringify(dadosRelatorioAtual))
+    })
     .then(res => res.json())
+    .catch(err => {
+        // Se a chamada via POST/fetch falhar, testamos a via GET clássica como plano B
+        return fetch(`${urlSistemas}?action=${action}&payload=${encodeURIComponent(JSON.stringify(dadosRelatorioAtual))}`)
+               .then(res => res.json());
+    })
     .then(r => {
         Swal.close();
         if (r.sucesso && r.base64) {
             const link = document.createElement('a');
             link.href = `data:application/pdf;base64,${r.base64}`;
-            link.download = tipo === 'todos' ? `Resumo_Geral_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab.replace(/ /g, "_")}.pdf`;
+            link.download = tipo === 'todos' ? `Resumo_${dadosRelatorioAtual.mes}.pdf` : `Relatorio_${dadosRelatorioAtual.colab.replace(/ /g, "_")}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         } else {
-            throw new Error(r.msg || "Erro ao gerar arquivo no servidor.");
+            Swal.fire('Erro', 'O volume de dados é muito grande para o servidor. Tente filtrar um período menor.', 'error');
         }
-    })
-    .catch(err => {
-        Swal.close();
-        console.error(err);
-        Swal.fire('Erro', 'Falha ao processar arquivo PDF.', 'error');
     });
 }
-
 // --- LANÇAR HORAS EM LOTE CORRIGIDO PARA GET ---
 function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
