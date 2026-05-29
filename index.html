@@ -214,10 +214,11 @@ function buscarRelatorio() {
   Swal.fire({ title: 'Buscando dados...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   fetch(urlSistemas, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "buscarRelatorio", c: colab, m: mes })
-  })
+  method: "POST", // Deve ser POST
+  mode: "cors",   // Importante: explicitamente permitir cors
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ action: "buscarRelatorio", c: colab, m: mes })
+})
   .then(res => res.json())
   .then(r => {
     Swal.close();
