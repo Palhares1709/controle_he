@@ -209,24 +209,24 @@ function validarCompetencia(texto) {
 function buscarRelatorio() {
   const colab = document.getElementById('relColab').value;
   const mes = document.getElementById('relMes').value.trim();
+  
   if (!mes) return Swal.fire('Atenção', 'Informe a Competência.', 'warning');
   
-  Swal.fire({ title: 'Buscando dados...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-  fetch(urlSistemas, {
-  method: "POST",
-  mode: "no-cors", // Tente esta alteração temporária
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ action: "buscarRelatorio", c: colab, m: mes })
-})
-.then(() => {
-  console.log("Requisição enviada com sucesso (no-cors)");
-  Swal.fire('Teste', 'Requisição enviada!', 'info');
-})
-.catch(err => {
-  console.error("Erro no teste:", err);
-});
-function exibirTabela(r) {
+  // Chamada via GET, compatível com o seu doGet()
+  fetch(`${urlSistemas}?action=buscarRelatorio&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`)
+  .then(res => res.json())
+  .then(r => {
+    Swal.close();
+    if (r.erro) throw new Error(r.erro);
+    dadosRelatorioAtual = r;
+    exibirTabela(r);
+  })
+  .catch(err => {
+    Swal.fire('Erro', 'Falha ao buscar: ' + err.message, 'error');
+  });
+}function exibirTabela(r) {
     const div = document.getElementById('sec-rel');
     if (!div) return;
 
