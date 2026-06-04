@@ -265,38 +265,33 @@ function buscarRelatorio() {
 // A função de PDF também utiliza POST para enviar os dados sem limite
 function baixarPDF(tipo) {
     const action = tipo === 'todos' ? 'gerarPDFTodos' : 'gerarPDF';
+    const colab = document.getElementById('relColab').value;
+    const mes = document.getElementById('relMes').value.trim();
     
-    Swal.fire({ 
-        title: 'Gerando PDF...', 
-        html: 'Processando...',
-        allowOutsideClick: false, 
-        didOpen: () => { Swal.showLoading() } 
-    });
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    // Enviamos o JSON como um parâmetro de URL codificado
-    const payloadUrl = encodeURIComponent(JSON.stringify(dadosRelatorioAtual));
-    const url = `${urlSistemas}?action=${action}&payload=${payloadUrl}`;
+    // Chamada simplificada enviando apenas os parâmetros de filtro
+    const url = `${urlSistemas}?action=${action}&c=${encodeURIComponent(colab)}&m=${encodeURIComponent(mes)}`;
 
     fetch(url)
     .then(res => res.json())
     .then(r => {
         Swal.close();
-        if (r.sucesso && r.base64) {
+        if (r.base64) {
             const link = document.createElement('a');
             link.href = `data:application/pdf;base64,${r.base64}`;
-            link.download = `Relatorio_${dadosRelatorioAtual.mes}.pdf`;
-            document.body.appendChild(link);
+            link.download = `Relatorio_${mes}.pdf`;
             link.click();
-            document.body.removeChild(link);
         } else {
-            Swal.fire('Erro', r.msg || 'Falha ao gerar PDF.', 'error');
+            Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error');
         }
     })
     .catch(err => {
         Swal.close();
-        Swal.fire('Erro', 'Erro na conexão: ' + err.message, 'error');
+        Swal.fire('Erro', 'Falha na conexão. Verifique se o Script foi implantado como "Nova Versão".', 'error');
     });
-}  function salvar() {
+}  
+  function salvar() {
     const checkboxes = Array.from(document.querySelectorAll('input[name="c"]:checked'));
     const comp = document.getElementById('comp').value.trim();
     const data = document.getElementById('data').value;
